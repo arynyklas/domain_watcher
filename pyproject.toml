@@ -17,6 +17,10 @@ dependencies = [
     "python-whois>=0.9",
     "litellm>=1.40",
     "aiosmtplib>=3.0",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "watchdog>=4",
+    "apscheduler>=3.10",
 ]
 
 [project.optional-dependencies]
