@@ -34,7 +34,7 @@ select = ["E", "F", "I", "B", "UP", "RUF", "SIM", "TC", "TID", "ASYNC"]
 [tool.ty]
 # ty is the Astral type checker (mypy successor). Configure rules
 # explicitly; "strict" semantics emulated via per-rule severities.
-environment.root = ["src"]
+environment.root = ["src", "tests"]
 environment.python-version = "3.12"
 rules.possibly-unresolved-reference = "error"
 rules.unused-ignore-comment = "warn"

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import timedelta
 
 _LABEL_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 """RFC 1035 label: letters, digits, hyphen; cannot start/end with hyphen.
@@ -146,6 +147,14 @@ class Duration:
     @classmethod
     def days(cls, n: int) -> Duration:
         return cls(seconds=n * 86400)
+
+    def as_timedelta(self) -> timedelta:
+        """Return this duration as a stdlib ``timedelta``.
+
+        Useful when comparing against the difference of two ``datetime``s
+        without dragging Duration arithmetic into core comparisons.
+        """
+        return timedelta(seconds=self.seconds)
 
     @classmethod
     def parse(cls, s: str) -> Duration:
