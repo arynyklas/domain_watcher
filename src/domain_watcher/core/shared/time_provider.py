@@ -49,4 +49,13 @@ class FixedClock:
         return self._now
 
 
-__all__ = ["FixedClock", "TimeProvider"]
+class SystemClock:
+    """Production ``TimeProvider`` — returns ``datetime.now(tz=UTC)``."""
+
+    __slots__ = ()
+
+    def now(self) -> datetime:
+        return datetime.now(tz=UTC)
+
+
+__all__ = ["FixedClock", "SystemClock", "TimeProvider"]
