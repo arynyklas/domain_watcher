@@ -1,0 +1,25 @@
+[importlinter]
+root_package = domain_watcher
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = layered architecture
+type = layers
+layers =
+    domain_watcher.interfaces
+    domain_watcher.application
+    domain_watcher.infrastructure
+    domain_watcher.core
+
+[importlinter:contract:core_purity]
+name = core has no third-party imports
+type = forbidden
+source_modules = domain_watcher.core
+forbidden_modules =
+    httpx
+    pydantic
+    sqlalchemy
+    apscheduler
+    watchdog
+    typer
+    structlog
