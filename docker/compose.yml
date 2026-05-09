@@ -1,0 +1,46 @@
+# Docker compose stack for domain-watcher.
+#
+# Two services:
+#   - ``app``: the daemon, built from ../Dockerfile.
+#   - ``ollama``: optional local LiteLLM backend (``parsing.llm_fallback.suggester.settings.model``
+#     defaults to ``ollama/gemma3``). Disable by removing the service or
+#     setting ``parsing.llm_fallback.enabled: false`` in your config.
+#
+# The named volume ``state`` survives container recreation; mount it at
+# ``/var/lib/domain-watcher`` so the SQLite state DB persists.
+
+name: domain-watcher
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: domain-watcher:dev
+    restart: unless-stopped
+    environment:
+      DOMAIN_WATCHER_CONFIG: /etc/domain-watcher/config.yaml
+      # Pass-through secrets — operator overrides via .env or shell.
+      TG_BOT_TOKEN: ${TG_BOT_TOKEN:-}
+      TG_OPS_CHAT: ${TG_OPS_CHAT:-}
+      PD_TOKEN: ${PD_TOKEN:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    volumes:
+      - ./example-config.yaml:/etc/domain-watcher/config.yaml:ro
+      - state:/var/lib/domain-watcher
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+    # Expose only on the internal network — the app reaches it via
+    # ``http://ollama:11434``.
+    expose:
+      - "11434"
+
+volumes:
+  state:
+  ollama:

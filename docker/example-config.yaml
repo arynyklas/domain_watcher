@@ -1,0 +1,75 @@
+# Minimal example config for the domain-watcher daemon.
+# Mount this at /etc/domain-watcher/config.yaml inside the container.
+#
+# Secrets are interpolated from environment variables (ADR 0003 §3):
+#   ${VAR}            — required; missing → daemon refuses to start
+#   ${VAR:-default}   — optional; falls back to ``default`` when unset
+
+version: 1
+
+runtime:
+  log_level: INFO
+  log_format: json
+  timezone: UTC
+  state_db: sqlite:///var/lib/domain-watcher/state.db
+
+checkers:
+  - id: rdap
+    type: rdap
+    settings:
+      timeout: 10s
+
+  - id: whois
+    type: whois
+    settings:
+      timeout: 30s
+
+notifiers:
+  - id: tg-ops
+    type: telegram
+    settings:
+      bot_token: ${TG_BOT_TOKEN}
+      chat_id: ${TG_OPS_CHAT}
+      parse_mode: HTML
+
+notification_defaults:
+  thresholds: ["30d", "14d", "7d", "1d"]
+  retry:
+    max_attempts: 3
+    base_delay: 1s
+    factor: 5.0
+
+parsing:
+  whois_rules:
+    - tld: ru
+      expires_regex: 'paid-till:\s+(\S+)'
+      date_format: iso8601
+    - tld: com
+      expires_regex: 'Registry Expiry Date:\s+(\S+)'
+      date_format: iso8601
+  # Disable LLM fallback by default; flip ``enabled`` to true and supply
+  # a suggester block once a backend (Ollama, OpenAI, etc.) is wired.
+  llm_fallback:
+    enabled: false
+    # Example using the bundled Ollama service:
+    # suggester:
+    #   type: litellm
+    #   settings:
+    #     model: ollama/gemma3
+    #     api_base: http://ollama:11434
+    # safety:
+    #   max_age_years: 50
+    #   revalidate_after: 30d
+    #   max_learn_per_hour: 5
+    #   max_learn_per_tld_per_24h: 3
+
+domains:
+  - name: example.com
+    checker: rdap
+    schedule: "0 */6 * * *"
+    channels: [tg-ops]
+
+  - name: example.ru
+    checker: whois
+    schedule: "0 */12 * * *"
+    channels: [tg-ops]
