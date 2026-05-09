@@ -1,0 +1,16 @@
+Domain Name: EXAMPLE.APP
+Registry Domain ID: D9999999-APP
+Registrar WHOIS Server: whois.markmonitor.com
+Registrar URL: http://www.markmonitor.com
+Updated Date: 2024-08-14T10:11:12Z
+Creation Date: 2018-05-08T00:00:00Z
+Registry Expiry Date: 2027-05-08T00:00:00Z
+Registrar: MarkMonitor Inc.
+Registrar IANA ID: 292
+Domain Status: clientDeleteProhibited https://icann.org/epp#clientDeleteProhibited
+Domain Status: clientTransferProhibited https://icann.org/epp#clientTransferProhibited
+Domain Status: clientUpdateProhibited https://icann.org/epp#clientUpdateProhibited
+Name Server: NS1.GOOGLEDOMAINS.COM
+Name Server: NS2.GOOGLEDOMAINS.COM
+DNSSEC: unsigned
+>>> Last update of WHOIS database: 2024-08-15T00:00:00Z <<<

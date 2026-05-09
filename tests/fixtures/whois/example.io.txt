@@ -1,0 +1,14 @@
+Domain Name: EXAMPLE.IO
+Registry Domain ID: D9999998-LRMS
+Registrar WHOIS Server: whois.gandi.net
+Registrar URL: http://www.gandi.net
+Updated Date: 2024-08-14T09:00:00Z
+Creation Date: 2014-08-14T00:00:00Z
+Registry Expiry Date: 2025-08-14T23:59:59Z
+Registrar: Gandi SAS
+Registrar IANA ID: 81
+Domain Status: clientTransferProhibited https://icann.org/epp#clientTransferProhibited
+Name Server: NS1.GANDI.NET
+Name Server: NS2.GANDI.NET
+DNSSEC: unsigned
+>>> Last update of WHOIS database: 2024-08-15T00:00:00Z <<<
