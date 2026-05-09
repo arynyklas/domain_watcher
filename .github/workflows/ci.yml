@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: lint + typecheck + unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: pin python
+        run: uv python install 3.12
+
+      - name: install
+        run: make install
+
+      - name: ci
+        run: make ci
+
+  integration:
+    name: integration
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: pin python
+        run: uv python install 3.12
+
+      - name: install
+        run: make install
+
+      - name: docker preflight
+        # Fail fast if Docker is unreachable; integration tests MUST NOT skip silently.
+        run: docker info >/dev/null
+
+      - name: integration
+        run: make test-integration
