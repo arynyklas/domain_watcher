@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "_about": "Per-TLD trusted domains used by ValidationPipeline gate 5 (cross-check). Each entry MUST be a real, currently-resolvable domain whose WHOIS response is structurally representative of the TLD. CI runs a weekly check that resolves each entry; failures are logged on the operator dashboard.",
+  "tlds": {
+    "com": ["iana.org", "verisign.com", "icann.org"],
+    "net": ["verisign.com", "internic.net"],
+    "org": ["isoc.org", "icann.org"],
+    "ru":  ["nic.ru", "ripn.net"],
+    "su":  ["nic.ru"],
+    "uk":  ["nic.uk"],
+    "co.uk": ["nic.uk", "nominet.uk"],
+    "io":  ["nic.io"],
+    "app": ["google.app"],
+    "dev": ["google.dev"],
+    "de":  ["denic.de"],
+    "fr":  ["afnic.fr"],
+    "nl":  ["sidn.nl"],
+    "it":  ["nic.it"],
+    "es":  ["nic.es"],
+    "ch":  ["switch.ch"],
+    "at":  ["nic.at"],
+    "be":  ["dnsbelgium.be"],
+    "ca":  ["cira.ca"],
+    "au":  ["auda.org.au"],
+    "jp":  ["jprs.jp"],
+    "br":  ["nic.br"],
+    "mx":  ["nic.mx"]
+  }
+}
