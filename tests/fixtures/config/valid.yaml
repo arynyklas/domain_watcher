@@ -1,0 +1,65 @@
+version: 1
+
+runtime:
+  log_level: INFO
+  log_format: json
+  timezone: UTC
+  state_db: sqlite:///state.db
+
+checkers:
+  - id: rdap
+    type: rdap
+    settings:
+      timeout: 10s
+      bootstrap_url: https://data.iana.org/rdap/dns.json
+  - id: whois
+    type: whois
+    settings:
+      timeout: 10s
+      port: 43
+
+notifiers:
+  - id: tg-ops
+    type: telegram
+    settings:
+      bot_token: ${TG_BOT_TOKEN}
+      chat_id: ${TG_OPS_CHAT}
+  - id: pagerduty
+    type: webhook
+    settings:
+      url: https://events.pagerduty.com/v2/enqueue
+      method: POST
+      headers:
+        Authorization: "Token ${PD_TOKEN}"
+      body_template: '{"summary": "${domain} expires in ${threshold}", "cycle": "${cycle_id}"}'
+
+notification_defaults:
+  thresholds: ["30d", "14d", "7d", "1d"]
+  retry:
+    max_attempts: 3
+    base_delay: 1s
+    factor: 5.0
+
+parsing:
+  whois_rules:
+    - tld: ru
+      expires_regex: 'paid-till:\s+(\S+)'
+      date_format: iso8601
+    - tld: com
+      expires_regex: 'Registry Expiry Date:\s+(\S+)'
+      date_format: iso8601
+  llm_fallback:
+    enabled: false
+
+domains:
+  - name: example.com
+    checker: rdap
+    schedule: "0 */6 * * *"
+    channels: [tg-ops, pagerduty]
+    thresholds: ["60d", "30d", "7d", "1d"]
+    metadata:
+      owner: platform-team
+  - name: example.ru
+    checker: whois
+    schedule: "0 */12 * * *"
+    channels: [tg-ops]

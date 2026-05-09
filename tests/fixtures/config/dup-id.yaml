@@ -1,0 +1,20 @@
+version: 1
+
+checkers:
+  - id: rdap
+    type: rdap
+  - id: rdap  # duplicate id
+    type: rdap
+
+notifiers:
+  - id: tg-ops
+    type: telegram
+    settings:
+      bot_token: secret
+      chat_id: "123"
+
+domains:
+  - name: example.com
+    checker: rdap
+    schedule: "0 */6 * * *"
+    channels: [tg-ops]

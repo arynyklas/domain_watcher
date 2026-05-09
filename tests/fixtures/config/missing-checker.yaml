@@ -1,0 +1,18 @@
+version: 1
+
+checkers:
+  - id: rdap
+    type: rdap
+
+notifiers:
+  - id: tg-ops
+    type: telegram
+    settings:
+      bot_token: secret
+      chat_id: "123"
+
+domains:
+  - name: example.com
+    checker: rdao  # typo: not in checkers[]
+    schedule: "0 */6 * * *"
+    channels: [tg-ops]
