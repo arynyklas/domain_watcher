@@ -459,6 +459,7 @@ dependencies = [
     { name = "python-whois" },
     { name = "pyyaml" },
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "typer" },
     { name = "watchdog" },
 ]
 
@@ -497,6 +498,7 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0" },
     { name = "testcontainers", extras = ["postgresql"], marker = "extra == 'integration'", specifier = ">=4.7" },
     { name = "ty", marker = "extra == 'dev'", specifier = ">=0.0.1a8" },
+    { name = "typer", specifier = ">=0.12" },
     { name = "watchdog", specifier = ">=4" },
 ]
 provides-extras = ["dev", "integration"]

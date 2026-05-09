@@ -21,7 +21,11 @@ dependencies = [
     "pyyaml>=6.0",
     "watchdog>=4",
     "apscheduler>=3.10",
+    "typer>=0.12",
 ]
+
+[project.scripts]
+domain-watcher = "domain_watcher.interfaces.cli.app:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -49,6 +53,18 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "RUF", "SIM", "TC", "TID", "ASYNC"]
+
+[tool.ruff.lint.per-file-ignores]
+# typer's API requires call-site defaults like ``= typer.Option(...)``.
+"src/domain_watcher/interfaces/cli/**/*.py" = ["B008", "TC001", "TC003"]
+# Library façade & composition root mix runtime + type-only deps from
+# many bounded contexts; spawning a TYPE_CHECKING block per import
+# obscures the dependency surface for no run-time gain.
+"src/domain_watcher/interfaces/library/**/*.py" = ["TC001", "TC003"]
+"src/domain_watcher/composition.py" = ["TC001", "TC003"]
+# Tests use pathlib synchronously inside async test functions; the rule
+# only matters for trio/anyio runtimes which we don't target.
+"tests/**/*.py" = ["ASYNC240", "TC001", "TC003"]
 
 [tool.ty]
 # ty is the Astral type checker (mypy successor). Configure rules
