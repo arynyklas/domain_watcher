@@ -8,7 +8,14 @@ authors = [
     { name = "Aryn Y.", email = "aryn@sek.su" },
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.20",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
+    "httpx>=0.27",
+    "python-whois>=0.9",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -18,6 +25,12 @@ dev = [
     "ruff>=0.5",
     "ty>=0.0.1a8",
     "import-linter>=2.0",
+]
+
+
+integration = [
+    "testcontainers[postgresql]>=4.7",
+    "psycopg[binary]>=3.2",
 ]
 
 [build-system]
