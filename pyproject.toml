@@ -1,0 +1,48 @@
+[project]
+name = "domain-watcher"
+version = "0.0.0"
+description = "Periodic domain expiration checker — RDAP/WHOIS/script with multi-channel alerts."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Aryn Y.", email = "aryn@sek.su" },
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "ruff>=0.5",
+    "ty>=0.0.1a8",
+    "import-linter>=2.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.9,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF", "SIM", "TC", "TID", "ASYNC"]
+
+[tool.ty]
+# ty is the Astral type checker (mypy successor). Configure rules
+# explicitly; "strict" semantics emulated via per-rule severities.
+environment.root = ["src"]
+environment.python-version = "3.12"
+rules.possibly-unresolved-reference = "error"
+rules.unused-ignore-comment = "warn"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+    "integration: tests requiring external services (Docker, network, etc.)",
+]
+testpaths = ["tests"]
