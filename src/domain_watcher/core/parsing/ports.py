@@ -59,7 +59,7 @@ class LearnedRulesRepository(Protocol):
         sample_domain: DomainName,
         suggester_id: str,
         pipeline_version: int,
-    ) -> None: ...
+    ) -> int: ...
 
     async def disable(self, rule_id: int, reason: str) -> None: ...
 
@@ -72,4 +72,35 @@ class LearnedRulesRepository(Protocol):
     async def mark_revalidated(self, rule_id: int, at: datetime) -> None: ...
 
 
-__all__ = ["LearnedRulesRepository", "RuleSuggester", "WhoisParser"]
+@runtime_checkable
+class ValidationPipeline(Protocol):
+    """Six-gate safety pipeline for runtime-suggested ``ParseRule`` (ADR 0006 §4).
+
+    Implementations live in ``infrastructure/parsers/validation_pipeline.py``;
+    ``application/services/parsing_service.py`` injects them. ``validate``
+    raises ``RuleValidationError`` on rejection and
+    ``SuggestionError(transient=True)`` when gate 5's known-good cross-check
+    is unavailable for transport reasons (NOT a rule rejection).
+
+    ``pipeline_version`` is the audit-trail integer recorded on every
+    ``LearnedRule``; bump it when gates tighten so operators can replay
+    revalidation against older rules.
+    """
+
+    pipeline_version: ClassVar[int]
+
+    async def validate(
+        self,
+        rule: ParseRule,
+        *,
+        raw_whois: str,
+        domain: DomainName,
+    ) -> None: ...
+
+
+__all__ = [
+    "LearnedRulesRepository",
+    "RuleSuggester",
+    "ValidationPipeline",
+    "WhoisParser",
+]
