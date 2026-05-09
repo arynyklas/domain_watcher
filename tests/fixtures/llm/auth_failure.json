@@ -1,0 +1,4 @@
+{
+  "_about": "Marker fixture: there is no successful response for this scenario; tests synthesise a litellm.exceptions.AuthenticationError instead. This file documents the case so future contributors do not look for a missing capture.",
+  "synthetic_exception": "litellm.exceptions.AuthenticationError"
+}

@@ -1,0 +1,11 @@
+{
+  "_about": "Captured response: small local model occasionally emits prose around the JSON object. The pipeline rejects this as a SuggestionError.",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Sure, here is the JSON:\n\n```json\n{\"expires_regex\": \"...\"}\n```"
+      }
+    }
+  ]
+}

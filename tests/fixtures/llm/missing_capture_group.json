@@ -1,0 +1,11 @@
+{
+  "_about": "Captured response: model produced a regex without a capture group. ParseRule construction rejects it; suggester wraps as SuggestionError.",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "{\"expires_regex\": \"Registry Expiry Date:\\\\s+\\\\S+\", \"date_format\": \"iso8601\", \"timezone\": \"UTC\"}"
+      }
+    }
+  ]
+}
