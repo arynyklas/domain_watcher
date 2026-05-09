@@ -34,7 +34,7 @@ imports-check:  ## verify layered architecture rules
 test: test-unit  ## default = unit tests only
 
 test-unit:  ## fast unit tests (no I/O)
-	$(UV) run pytest -q tests/unit
+	$(UV) run pytest -q tests/unit tests/contracts
 
 test-integration:  ## integration tests (Docker required)
 	$(UV) run pytest -q -m integration
