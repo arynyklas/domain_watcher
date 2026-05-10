@@ -1,6 +1,6 @@
 [project]
 name = "domain-watcher"
-version = "0.0.0"
+version = "0.1.0"
 description = "Periodic domain expiration checker — RDAP/WHOIS/script with multi-channel alerts."
 readme = "README.md"
 license = { text = "MIT" }
