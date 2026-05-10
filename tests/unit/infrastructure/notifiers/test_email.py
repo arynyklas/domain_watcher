@@ -167,7 +167,9 @@ async def test_connect_error_raises_delivery_failed() -> None:
 
 
 async def test_5xx_response_raises_permanent() -> None:
-    sender = _StubSender(raises=aiosmtplib.SMTPResponseException(550, "mailbox unavailable"))
+    sender = _StubSender(
+        raises=aiosmtplib.SMTPResponseException(550, "mailbox unavailable")
+    )
     notifier = _notifier(sender=sender)
     with pytest.raises(NotificationError, match="permanent"):
         await notifier.send(_alert(), _channel())

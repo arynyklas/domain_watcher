@@ -81,7 +81,9 @@ def truncate(raw_whois: str, *, limit: int = RAW_TRUNCATE_LIMIT) -> str:
 
 def build_messages(*, raw_whois: str, tld: str, domain: str) -> list[dict[str, str]]:
     """One-shot prompt: system + example user + example assistant + real user."""
-    user = USER_PROMPT_TEMPLATE.format(tld=tld, domain=domain, raw_whois=truncate(raw_whois))
+    user = USER_PROMPT_TEMPLATE.format(
+        tld=tld, domain=domain, raw_whois=truncate(raw_whois)
+    )
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": EXAMPLE_USER},

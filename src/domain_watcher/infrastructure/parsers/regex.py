@@ -53,7 +53,13 @@ def _parse_iso_like(captured: str) -> datetime:
     try:
         return datetime.fromisoformat(raw)
     except ValueError as exc:
-        raise ParseError(f"unparseable ISO/RFC3339 datetime {captured!r}: {exc}") from exc
+        raise ParseError(
+            f"unparseable ISO/RFC3339 datetime {captured!r}: {exc}"
+        ) from exc
+
+
+# ``dd-mmm-yyyy`` is exactly three hyphen-separated parts.
+_DMY_PART_COUNT = 3
 
 
 def _parse_yyyy_mm_dd(captured: str) -> datetime:
@@ -66,7 +72,7 @@ def _parse_yyyy_mm_dd(captured: str) -> datetime:
 def _parse_dd_mmm_yyyy(captured: str) -> datetime:
     s = captured.strip()
     parts = s.split("-")
-    if len(parts) != 3:
+    if len(parts) != _DMY_PART_COUNT:
         raise ParseError(f"unparseable dd-mmm-yyyy {captured!r}")
     day_s, mon_s, year_s = parts
     try:

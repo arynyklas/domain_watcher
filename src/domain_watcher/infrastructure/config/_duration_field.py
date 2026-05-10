@@ -14,18 +14,22 @@ from pydantic import BeforeValidator, PlainSerializer
 from domain_watcher.core.shared.value_objects import Duration
 
 
-def _coerce(value: Any) -> Duration:
+def _coerce(value: Any) -> Duration:  # noqa: ANN401 — pydantic validator receives Any
     """Coerce ``"30d"``, ``Duration`` instances, or bare ints into ``Duration``."""
     if isinstance(value, Duration):
         return value
     if isinstance(value, bool):
         # bool is an int — reject explicitly; otherwise ``True`` becomes 1s.
-        raise ValueError(f"Duration value must be str|int|Duration, got bool: {value!r}")
+        raise ValueError(
+            f"Duration value must be str|int|Duration, got bool: {value!r}"
+        )
     if isinstance(value, int):
         return Duration.from_seconds(value)
     if isinstance(value, str):
         return Duration.parse(value)
-    raise ValueError(f"Duration value must be str|int|Duration, got {type(value).__name__}")
+    raise ValueError(
+        f"Duration value must be str|int|Duration, got {type(value).__name__}"
+    )
 
 
 def _serialize(value: Duration) -> str:

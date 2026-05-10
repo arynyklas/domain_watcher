@@ -33,7 +33,9 @@ async def test_parse_success(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_whois(domain: str) -> Any:
         return _Record(raw)
 
-    monkeypatch.setattr("domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois)
+    monkeypatch.setattr(
+        "domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois
+    )
 
     async def parse(text: str, domain: DomainName) -> datetime:
         assert text == raw
@@ -52,7 +54,9 @@ async def test_parse_error_becomes_permanent(monkeypatch: pytest.MonkeyPatch) ->
     def fake_whois(domain: str) -> Any:
         return _Record(raw)
 
-    monkeypatch.setattr("domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois)
+    monkeypatch.setattr(
+        "domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois
+    )
 
     async def parse(text: str, domain: DomainName) -> datetime:
         raise NoMatchingRuleError("no rule")
@@ -69,7 +73,9 @@ async def test_no_match_passes_through(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_whois(domain: str) -> Any:
         return _Record(raw)
 
-    monkeypatch.setattr("domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois)
+    monkeypatch.setattr(
+        "domain_watcher.infrastructure.checkers.whois.whois.whois", fake_whois
+    )
 
     async def parse(text: str, domain: DomainName) -> datetime:  # pragma: no cover
         raise AssertionError("parser should not run on no-match")

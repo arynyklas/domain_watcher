@@ -144,7 +144,9 @@ def test_check_runs_one_shot_against_script_checker(
 # ---------------------------------------------------------------------------
 
 
-def test_rules_learned_lists_empty_initially(runner: CliRunner, script_config: Path) -> None:
+def test_rules_learned_lists_empty_initially(
+    runner: CliRunner, script_config: Path
+) -> None:
     result = runner.invoke(cli, ["rules", "learned", "--config", str(script_config)])
     assert result.exit_code == 0
     assert "no learned rules" in result.output.lower()
@@ -160,7 +162,9 @@ def test_rules_purge_auto_requires_yes(runner: CliRunner, script_config: Path) -
     assert "--yes" in result.output
 
 
-def test_rules_revalidate_no_target_errors(runner: CliRunner, script_config: Path) -> None:
+def test_rules_revalidate_no_target_errors(
+    runner: CliRunner, script_config: Path
+) -> None:
     result = runner.invoke(
         cli,
         ["rules", "revalidate", "--config", str(script_config)],

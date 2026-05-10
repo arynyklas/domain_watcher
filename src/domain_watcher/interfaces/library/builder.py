@@ -151,7 +151,10 @@ class DomainWatcherBuilder:
         self,
         routes: Mapping[str, str],
     ) -> DomainWatcherBuilder:
-        """Override the channel id → notifier id map (e.g. ``{"team-a": "telegram"}``)."""
+        """Override the channel id → notifier id map.
+
+        Example: ``{"team-a": "telegram"}``.
+        """
         self._channel_to_notifier.update(routes)
         return self
 
@@ -188,10 +191,12 @@ class DomainWatcherBuilder:
         )
 
         # Deferred import to break the api ↔ builder cycle.
-        from domain_watcher.interfaces.library.api import DomainWatcher
+        from domain_watcher.interfaces.library.api import DomainWatcher  # noqa: PLC0415
 
         scheduler: SchedulerService = (
-            self._scheduler if self._scheduler is not None else _build_default_scheduler(repo)
+            self._scheduler
+            if self._scheduler is not None
+            else _build_default_scheduler(repo)
         )
 
         watcher = DomainWatcher(

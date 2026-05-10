@@ -66,7 +66,8 @@ class ApsScheduler:
         *,
         timezone: str = "UTC",
         bootstrap_repo: _BootstrapDomainSource | None = None,
-        bootstrap_callable_factory: Callable[[MonitoredDomain], JobCallable] | None = None,
+        bootstrap_callable_factory: Callable[[MonitoredDomain], JobCallable]
+        | None = None,
     ) -> None:
         self._scheduler = AsyncIOScheduler(
             timezone=timezone,
@@ -94,7 +95,10 @@ class ApsScheduler:
         # any tick — otherwise an embedded caller could observe an empty
         # job list. We add the jobs first (the scheduler will pick them up
         # on .start()), then start it.
-        if self._bootstrap_repo is not None and self._bootstrap_callable_factory is not None:
+        if (
+            self._bootstrap_repo is not None
+            and self._bootstrap_callable_factory is not None
+        ):
             domains = await self._bootstrap_repo.list_all()
             await self.reconcile(
                 domains,
@@ -208,7 +212,9 @@ class ApsScheduler:
     ) -> None:
         """Schedule the periodic learned-rules revalidation pass."""
         if interval.seconds <= 0:
-            raise ValueError(f"revalidation interval must be positive, got {interval.seconds}s")
+            raise ValueError(
+                f"revalidation interval must be positive, got {interval.seconds}s"
+            )
         jid = _REVALIDATION_JOB_ID
         trigger = IntervalTrigger(seconds=interval.seconds, timezone=self._timezone)
         if self._scheduler.get_job(jid) is not None:

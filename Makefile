@@ -5,7 +5,7 @@ SHELL := /usr/bin/env bash
 UV ?= uv
 
 .PHONY: help install sync test test-unit test-integration test-e2e \
-        lint format format-check typecheck imports-check \
+        lint format format-check typecheck imports-check migrations-check \
         check ci clean run docker-build docker-up docker-down
 
 help:  ## list targets
@@ -31,6 +31,12 @@ typecheck:  ## ty type-check (mypy successor)
 imports-check:  ## verify layered architecture rules
 	$(UV) run lint-imports
 
+migrations-check:  ## verify alembic models match migrations (no drift)
+	rm -f state.db
+	$(UV) run --no-sync alembic upgrade head
+	$(UV) run --no-sync alembic check
+	rm -f state.db
+
 test: test-unit  ## default = unit tests only
 
 test-unit:  ## fast unit tests (no I/O)
@@ -46,10 +52,17 @@ test-all: test-unit test-integration test-e2e  ## every test suite
 
 check: lint format-check typecheck imports-check test-unit  ## local pre-commit gate
 
-ci: check  ## what CI runs (integration added by the workflow when Docker is up)
+# Coverage in `addopts` (pyproject.toml) regenerates `coverage.xml` from
+# cumulative `.coverage` data on every pytest run; passing
+# `--cov-append` to the second invocation gives us a unit + e2e union
+# in one report.
+ci: lint format-check typecheck imports-check migrations-check  ## what CI runs
+	rm -f .coverage coverage.xml
+	$(UV) run pytest -q tests/unit tests/contracts
+	$(UV) run pytest -q --cov-append tests/e2e
 
 clean:  ## remove caches and build artifacts
-	rm -rf .pytest_cache .ruff_cache .ty_cache .mypy_cache dist build htmlcov .coverage*
+	rm -rf .pytest_cache .ruff_cache .ty_cache .mypy_cache dist build htmlcov .coverage* coverage.xml
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 	find . -type d -name '*.egg-info' -prune -exec rm -rf {} +
 

@@ -73,7 +73,9 @@ class _Subscriber:
     def __init__(self, sid: str, standard_maxsize: int) -> None:
         self.id = sid
         self.critical_q: asyncio.Queue[DomainEvent] = asyncio.Queue()
-        self.standard_q: asyncio.Queue[DomainEvent] = asyncio.Queue(maxsize=standard_maxsize)
+        self.standard_q: asyncio.Queue[DomainEvent] = asyncio.Queue(
+            maxsize=standard_maxsize
+        )
         self._closed = False
 
     def is_open(self) -> bool:
@@ -255,7 +257,9 @@ class _SubscriberIterator(AsyncIterator[DomainEvent]):
         crit = asyncio.create_task(self._sub.critical_q.get())
         std = asyncio.create_task(self._sub.standard_q.get())
         try:
-            done, _pending = await asyncio.wait({crit, std}, return_when=asyncio.FIRST_COMPLETED)
+            done, _pending = await asyncio.wait(
+                {crit, std}, return_when=asyncio.FIRST_COMPLETED
+            )
             # Prefer critical when both completed simultaneously.
             if crit in done:
                 # Re-queue any standard event we already pulled to preserve

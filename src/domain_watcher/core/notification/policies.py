@@ -19,7 +19,7 @@ from domain_watcher.core.shared.value_objects import Duration
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from datetime import datetime
+    from datetime import datetime, timedelta
 
     from domain_watcher.core.checking.value_objects import CheckResult
     from domain_watcher.core.monitoring.value_objects import LastCheck
@@ -55,7 +55,9 @@ class NotificationPolicy:
         seconds = [t.seconds for t in self.thresholds]
         for prev, cur in itertools.pairwise(seconds):
             if cur >= prev:
-                raise ValueError("NotificationPolicy.thresholds must be strictly descending")
+                raise ValueError(
+                    "NotificationPolicy.thresholds must be strictly descending"
+                )
 
     def alerts_for(
         self,
@@ -75,16 +77,15 @@ class NotificationPolicy:
         cycle = _cycle_id(current.expires_at)
 
         # Same-cycle prev allows us to suppress already-crossed thresholds.
-        same_cycle_prev = (
+        # Only OK previous checks with the same expiry contribute; otherwise
+        # we treat the threshold as not-yet-crossed.
+        if (
             previous is not None
             and previous.outcome is CheckOutcome.OK
             and previous.expires_at is not None
             and previous.expires_at == current.expires_at
-        )
-        if same_cycle_prev:
-            assert previous is not None
-            assert previous.expires_at is not None
-            prev_time_left = previous.expires_at - previous.at
+        ):
+            prev_time_left: timedelta | None = previous.expires_at - previous.at
         else:
             prev_time_left = None
 
@@ -94,7 +95,8 @@ class NotificationPolicy:
             if not crossed_now:
                 continue
             crossed_before = (
-                prev_time_left is not None and prev_time_left <= threshold.as_timedelta()
+                prev_time_left is not None
+                and prev_time_left <= threshold.as_timedelta()
             )
             if crossed_before:
                 continue

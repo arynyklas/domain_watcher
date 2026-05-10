@@ -32,7 +32,9 @@ try:
 except _md.PackageNotFoundError:  # not installed: fall back to pyproject
     import tomllib
 
-    release = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text())["project"]["version"]
+    release = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text())["project"][
+        "version"
+    ]
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------

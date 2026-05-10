@@ -8,13 +8,13 @@ The store assigns rule ids monotonically starting at 1.
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from domain_watcher.core.parsing.value_objects import LearnedRule, RegexPattern
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from datetime import datetime
 
     from domain_watcher.core.parsing.value_objects import ParseRule
     from domain_watcher.core.shared.value_objects import DomainName
@@ -58,8 +58,6 @@ class MemoryLearnedRulesRepo:
                         f"duplicate learned rule for tld={rule.tld!r} regex="
                         f"{rule.expires_regex.raw!r}"
                     )
-            from datetime import UTC, datetime
-
             rid = self._next_id
             self._next_id += 1
             learned = LearnedRule(
@@ -112,7 +110,9 @@ class MemoryLearnedRulesRepo:
         include_disabled: bool = False,
     ) -> Sequence[LearnedRule]:
         async with self._lock:
-            return tuple(lr for lr in self._by_id.values() if include_disabled or not lr.disabled)
+            return tuple(
+                lr for lr in self._by_id.values() if include_disabled or not lr.disabled
+            )
 
     async def mark_revalidated(self, rule_id: int, at: datetime) -> None:
         async with self._lock:

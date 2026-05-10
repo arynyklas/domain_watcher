@@ -13,6 +13,7 @@ Settings:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from http import HTTPStatus
 from typing import TYPE_CHECKING, ClassVar
 
 import httpx
@@ -21,6 +22,13 @@ from domain_watcher.core.notification.entities import AlertSeverity
 from domain_watcher.core.shared.errors import (
     DeliveryFailedError,
     NotificationError,
+)
+from domain_watcher.infrastructure._http import (
+    HTTP_2XX_MAX,
+    HTTP_2XX_MIN,
+    HTTP_4XX_MIN,
+    HTTP_5XX_MAX,
+    HTTP_5XX_MIN,
 )
 
 if TYPE_CHECKING:
@@ -34,7 +42,9 @@ _SEVERITY_COLOR: dict[AlertSeverity, int] = {
 }
 
 
-def _build_payload(alert: Alert, *, username: str | None, avatar_url: str | None) -> dict:
+def _build_payload(
+    alert: Alert, *, username: str | None, avatar_url: str | None
+) -> dict:
     embed = {
         "title": f"Domain expiring: {alert.domain.value}",
         "description": (
@@ -87,7 +97,10 @@ class DiscordNotifier:
 
     async def send(self, alert: Alert, channel: Channel) -> None:
         del channel
-        assert self.client is not None
+        if self.client is None:
+            raise RuntimeError(
+                "DiscordNotifier.client is None — __post_init__ invariant violated"
+            )
         body = _build_payload(alert, username=self.username, avatar_url=self.avatar_url)
         try:
             response = await self.client.post(self.webhook_url, json=body)
@@ -95,14 +108,23 @@ class DiscordNotifier:
             raise DeliveryFailedError(f"discord transport failure: {exc}") from exc
 
         status = response.status_code
-        if 200 <= status < 300:
+        if HTTP_2XX_MIN <= status < HTTP_2XX_MAX:
             return
-        if status == 401 or status == 403 or status == 404:
+        if status in {
+            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
+            HTTPStatus.NOT_FOUND,
+        }:
             # 404 = webhook deleted; not retryable.
-            raise NotificationError(f"discord http {status}: webhook invalid or revoked")
-        if status == 429 or 500 <= status < 600:
+            raise NotificationError(
+                f"discord http {status}: webhook invalid or revoked"
+            )
+        if (
+            status == HTTPStatus.TOO_MANY_REQUESTS
+            or HTTP_5XX_MIN <= status < HTTP_5XX_MAX
+        ):
             raise DeliveryFailedError(f"discord http {status}")
-        if 400 <= status < 500:
+        if HTTP_4XX_MIN <= status < HTTP_5XX_MIN:
             raise NotificationError(f"discord http {status}")
         raise DeliveryFailedError(f"discord http {status}")
 

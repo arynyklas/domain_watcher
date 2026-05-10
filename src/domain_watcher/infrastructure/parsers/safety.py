@@ -63,9 +63,13 @@ class TokenBucketLimiter:
         clock: TimeProvider,
     ) -> None:
         if capacity < 1:
-            raise ValueError(f"TokenBucketLimiter capacity must be >= 1, got {capacity}")
+            raise ValueError(
+                f"TokenBucketLimiter capacity must be >= 1, got {capacity}"
+            )
         if window_seconds <= 0:
-            raise ValueError(f"TokenBucketLimiter window_seconds must be > 0, got {window_seconds}")
+            raise ValueError(
+                f"TokenBucketLimiter window_seconds must be > 0, got {window_seconds}"
+            )
         self._capacity = capacity
         self._window_seconds = window_seconds
         self._clock = clock
@@ -182,7 +186,9 @@ def default_circuit_breaker(clock: TimeProvider) -> CircuitBreaker:
 
 # Re-export the circuit-breaker factory; not all callers want to know
 # about the timedelta values.
-default_breaker_factory: Callable[[TimeProvider], CircuitBreaker] = default_circuit_breaker
+default_breaker_factory: Callable[[TimeProvider], CircuitBreaker] = (
+    default_circuit_breaker
+)
 
 
 __all__ = [

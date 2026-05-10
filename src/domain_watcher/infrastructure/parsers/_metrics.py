@@ -42,7 +42,9 @@ class LabeledCounter:
 
 # Module-level singleton — Phase 11 swaps this for prometheus_client.Counter
 # without touching call sites.
-pipeline_gate5_skipped_total = LabeledCounter("domain_watcher_pipeline_gate5_skipped_total")
+pipeline_gate5_skipped_total = LabeledCounter(
+    "domain_watcher_pipeline_gate5_skipped_total"
+)
 """Reasons: ``no_known_good`` (data file lookup miss),
 ``cross_check_unavailable`` (transient transport failure)."""
 

@@ -17,7 +17,7 @@ import asyncio
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import typer
 
@@ -36,14 +36,15 @@ rules_app = typer.Typer(
 )
 
 
-def _load_repo(config: Path | None):
+def _load_repo(config: Path | None) -> DomainWatcher:
     """Compose the watcher purely so we can reach the learned-rules repo."""
-    from domain_watcher.composition import compose_from_config
+    # Late import: composing the full watcher pulls heavy infra (sqlalchemy,
+    # apscheduler, …) — keep it out of the CLI start path until needed.
+    from domain_watcher.composition import compose_from_config  # noqa: PLC0415
 
     cfg_path = resolve_config_path(cli_path=config)
     cfg = load_config(cfg_path)
-    watcher = compose_from_config(cfg)
-    return watcher
+    return compose_from_config(cfg)
 
 
 def _format_rule(rule: LearnedRule) -> str:
@@ -59,7 +60,9 @@ def _format_rule(rule: LearnedRule) -> str:
 @rules_app.command("learned")
 def learned(
     tld: str | None = typer.Option(None, "--tld", help="Filter by TLD."),
-    purge_auto: bool = typer.Option(False, "--purge-auto", help="Delete every auto_learned rule."),
+    purge_auto: bool = typer.Option(
+        False, "--purge-auto", help="Delete every auto_learned rule."
+    ),
     yes: bool = typer.Option(False, "--yes", help="Confirm destructive --purge-auto."),
     config: Path | None = typer.Option(None, "--config"),
     include_disabled: bool = typer.Option(
@@ -78,10 +81,11 @@ def learned(
                 )
                 return 2
             count = 0
-            for rule in await watcher.learned_rules_repo.list_all(include_disabled=True):
+            repo = _learned_rules_repo(watcher)
+            for rule in await repo.list_all(include_disabled=True):
                 if not rule.auto_learned:
                     continue
-                await watcher.learned_rules_repo.disable(rule.id, "purge-auto")
+                await repo.disable(rule.id, "purge-auto")
                 count += 1
             typer.echo(f"disabled {count} auto_learned rules")
             return 0
@@ -161,7 +165,7 @@ def disable(
 
     async def _run() -> int:
         try:
-            await watcher.learned_rules_repo.disable(rule_id, reason)
+            await _learned_rules_repo(watcher).disable(rule_id, reason)
         except KeyError:
             typer.echo(f"no rule with id {rule_id}", err=True)
             return 1
@@ -184,7 +188,7 @@ def delete(
 
     async def _run() -> int:
         try:
-            await watcher.learned_rules_repo.disable(rule_id, "deleted")
+            await _learned_rules_repo(watcher).disable(rule_id, "deleted")
         except KeyError:
             typer.echo(f"no rule with id {rule_id}", err=True)
             return 1
@@ -210,21 +214,26 @@ def revalidate(
 
     async def _run() -> int:
         if rule_id is None and not all_ and below_pipeline_version is None:
-            typer.echo("specify a rule id, --all, or --below-pipeline-version N", err=True)
+            typer.echo(
+                "specify a rule id, --all, or --below-pipeline-version N", err=True
+            )
             return 2
-        rules = await watcher.learned_rules_repo.list_all(include_disabled=False)
+        repo = _learned_rules_repo(watcher)
+        rules = await repo.list_all(include_disabled=False)
         if rule_id is not None:
             rules = tuple(r for r in rules if r.id == rule_id)
             if not rules:
                 typer.echo(f"no rule with id {rule_id}", err=True)
                 return 1
         elif below_pipeline_version is not None:
-            rules = tuple(r for r in rules if r.pipeline_version < below_pipeline_version)
+            rules = tuple(
+                r for r in rules if r.pipeline_version < below_pipeline_version
+            )
         # No-op stub: real revalidation runs through ``RevalidationService``
         # which requires a live ``WhoisFetcher``. The CLI surfaces a count;
         # the daemon's scheduled job is what actually drives revalidation.
         for r in rules:
-            await watcher.learned_rules_repo.mark_revalidated(r.id, datetime.now(tz=UTC))
+            await repo.mark_revalidated(r.id, datetime.now(tz=UTC))
         typer.echo(f"marked {len(rules)} rules for revalidation")
         return 0
 
@@ -272,7 +281,7 @@ def _learned_rules_repo(watcher: DomainWatcher) -> LearnedRulesRepository:
             "this build has no learned-rules backend wired; "
             "the rules subcommands require a SQL or memory backend"
         )
-    return cast("LearnedRulesRepository", repo)
+    return repo
 
 
 def _resolve_config(path: Path | None) -> Path:

@@ -69,7 +69,9 @@ async def test_recorded_llm_happy_path_persists_and_publishes() -> None:
     raw_whois = (FIXTURES_WHOIS / "example.com.txt").read_text(encoding="utf-8")
     fixture = _load_fixture("unknown_tld_ok.json")
 
-    suggester = LiteLLMRuleSuggester(model="ollama/gemma3", api_base="http://localhost:11434")
+    suggester = LiteLLMRuleSuggester(
+        model="ollama/gemma3", api_base="http://localhost:11434"
+    )
     pipeline = ValidationPipeline(
         cross_check_fetcher=_StubFetcher(raw_whois),
         clock=FixedClock(NOW),

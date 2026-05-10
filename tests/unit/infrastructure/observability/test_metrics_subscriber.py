@@ -62,7 +62,9 @@ async def test_check_completed_increments_counter() -> None:
         source="rdap",
     )
     await bus.publish(
-        DomainCheckCompleted(occurred_at=datetime(2026, 5, 9, tzinfo=UTC), result=result)
+        DomainCheckCompleted(
+            occurred_at=datetime(2026, 5, 9, tzinfo=UTC), result=result
+        )
     )
     await _drain(bus)
     after = _read("domain_watcher_checks_total", checker="rdap", outcome="ok")
@@ -75,7 +77,9 @@ async def test_check_failed_uses_transient_outcome_label() -> None:
     bus = InProcessEventBus()
     metrics_subscriber.register(bus)
 
-    before = _read("domain_watcher_checks_total", checker="whois", outcome="transient_error")
+    before = _read(
+        "domain_watcher_checks_total", checker="whois", outcome="transient_error"
+    )
     await bus.publish(
         DomainCheckFailed(
             occurred_at=datetime(2026, 5, 9, tzinfo=UTC),
@@ -86,7 +90,9 @@ async def test_check_failed_uses_transient_outcome_label() -> None:
         )
     )
     await _drain(bus)
-    after = _read("domain_watcher_checks_total", checker="whois", outcome="transient_error")
+    after = _read(
+        "domain_watcher_checks_total", checker="whois", outcome="transient_error"
+    )
 
     assert after == before + 1
 
@@ -103,7 +109,9 @@ async def test_notification_dispatched_increments_alerts_sent() -> None:
         severity=AlertSeverity.WARNING,
         expires_at=datetime(2030, 1, 1, tzinfo=UTC),
     )
-    before = _read("domain_watcher_alerts_sent_total", channel="tg-ops", severity="warning")
+    before = _read(
+        "domain_watcher_alerts_sent_total", channel="tg-ops", severity="warning"
+    )
     await bus.publish(
         NotificationDispatched(
             occurred_at=datetime(2026, 5, 9, tzinfo=UTC),
@@ -112,7 +120,9 @@ async def test_notification_dispatched_increments_alerts_sent() -> None:
         )
     )
     await _drain(bus)
-    after = _read("domain_watcher_alerts_sent_total", channel="tg-ops", severity="warning")
+    after = _read(
+        "domain_watcher_alerts_sent_total", channel="tg-ops", severity="warning"
+    )
 
     assert after == before + 1
 
@@ -122,7 +132,9 @@ async def test_rule_learned_and_invalidated_counters() -> None:
     bus = InProcessEventBus()
     metrics_subscriber.register(bus)
 
-    before_learned = _read("domain_watcher_rules_learned_total", suggester="litellm", tld="ai")
+    before_learned = _read(
+        "domain_watcher_rules_learned_total", suggester="litellm", tld="ai"
+    )
     before_invalidated = _read(
         "domain_watcher_rules_invalidated_total", reason="cross_check", tld="ai"
     )

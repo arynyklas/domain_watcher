@@ -215,7 +215,9 @@ async def test_gate6_sentinel_date_rejects() -> None:
         expires_regex=RegexPattern(r"sentinel:\s*(\S+)"),
         date_format=DateFormat.ISO_8601,
     )
-    raw2 = "sentinel: 9999-12-31T00:00:00Z\nRegistry Expiry Date: 2030-08-13T04:00:00Z\n"
+    raw2 = (
+        "sentinel: 9999-12-31T00:00:00Z\nRegistry Expiry Date: 2030-08-13T04:00:00Z\n"
+    )
     fetcher.responses["iana.org"] = "sentinel: 9999-12-31T00:00:00Z\n"
     far_clock_pipeline = ValidationPipeline(
         cross_check_fetcher=fetcher,

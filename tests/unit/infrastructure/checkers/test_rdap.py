@@ -101,7 +101,9 @@ async def test_malformed_json_permanent() -> None:
 
 
 async def test_no_expiration_event_permanent() -> None:
-    payload = {"events": [{"eventAction": "registration", "eventDate": "2020-01-01T00:00:00Z"}]}
+    payload = {
+        "events": [{"eventAction": "registration", "eventDate": "2020-01-01T00:00:00Z"}]
+    }
 
     def handler(req: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=json.dumps(payload))
@@ -115,7 +117,9 @@ async def test_no_expiration_event_permanent() -> None:
 
 
 async def test_bootstrap_unknown_tld_permanent() -> None:
-    def handler(req: httpx.Request) -> httpx.Response:  # pragma: no cover — never called
+    def handler(
+        req: httpx.Request,
+    ) -> httpx.Response:  # pragma: no cover — never called
         return httpx.Response(200)
 
     client = _client(handler)

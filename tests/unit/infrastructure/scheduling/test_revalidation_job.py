@@ -44,7 +44,8 @@ async def test_add_revalidation_job_replaces_existing() -> None:
 
 
 async def test_revalidation_job_not_touched_by_domain_reconcile() -> None:
-    """``reconcile`` over per-domain MonitoredDomains MUST leave the revalidation job alone."""
+    """``reconcile`` over per-domain MonitoredDomains MUST leave the
+    revalidation job alone."""
     from domain_watcher.core.monitoring.entities import MonitoredDomain
     from domain_watcher.core.monitoring.value_objects import ChannelId, CheckSchedule
     from domain_watcher.core.shared.value_objects import DomainName
@@ -57,7 +58,11 @@ async def test_revalidation_job_not_touched_by_domain_reconcile() -> None:
                 name=DomainName("a.test"),
                 schedule=CheckSchedule(cron="0 */6 * * *"),
                 checker_id="rdap",
-                notify_thresholds=(Duration.days(30), Duration.days(7), Duration.days(1)),
+                notify_thresholds=(
+                    Duration.days(30),
+                    Duration.days(7),
+                    Duration.days(1),
+                ),
                 channels=(ChannelId("tg-ops"),),
             ),
         ],

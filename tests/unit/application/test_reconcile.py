@@ -41,7 +41,9 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _domain(name: str, *, cron: str = "0 */6 * * *", checker: str = "rdap") -> MonitoredDomain:
+def _domain(
+    name: str, *, cron: str = "0 */6 * * *", checker: str = "rdap"
+) -> MonitoredDomain:
     return MonitoredDomain(
         name=DomainName(name),
         schedule=CheckSchedule(cron=cron),
@@ -184,7 +186,9 @@ async def test_registry_subscriber_adds_new_plugins() -> None:
     holder.subscribe_object(sub)
 
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "x"}),))
+        _Cfg(
+            plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "x"}),)
+        )
     )
     assert registry.get("tg").id == "tg"
 
@@ -204,7 +208,11 @@ async def test_registry_subscriber_removes_dropped_plugins() -> None:
         )
     )
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="discord", type="discord", settings={"webhook_url": "u"}),))
+        _Cfg(
+            plugins=(
+                PluginSpec(id="discord", type="discord", settings={"webhook_url": "u"}),
+            )
+        )
     )
 
     import pytest
@@ -264,12 +272,20 @@ async def test_registry_subscriber_secret_only_diff_uses_hot_reload() -> None:
     holder.subscribe_object(sub)
 
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "v1"}),))
+        _Cfg(
+            plugins=(
+                PluginSpec(id="tg", type="telegram", settings={"bot_token": "v1"}),
+            )
+        )
     )
     original = registry.get("tg")
 
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "v2"}),))
+        _Cfg(
+            plugins=(
+                PluginSpec(id="tg", type="telegram", settings={"bot_token": "v2"}),
+            )
+        )
     )
     after = registry.get("tg")
     assert after is original  # in-place reload kept the instance
@@ -283,7 +299,9 @@ async def test_registry_subscriber_type_change_forces_replace() -> None:
     holder.subscribe_object(sub)
 
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="x", type="telegram", settings={"bot_token": "v"}),))
+        _Cfg(
+            plugins=(PluginSpec(id="x", type="telegram", settings={"bot_token": "v"}),)
+        )
     )
     original = registry.get("x")
 
@@ -302,7 +320,9 @@ async def test_in_flight_send_drains_on_old_instance_after_removal() -> None:
     holder.subscribe_object(sub)
 
     await holder.update(
-        _Cfg(plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "v"}),))
+        _Cfg(
+            plugins=(PluginSpec(id="tg", type="telegram", settings={"bot_token": "v"}),)
+        )
     )
     notifier = registry.get("tg")
     barrier = asyncio.Event()

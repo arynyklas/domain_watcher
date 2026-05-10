@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import string
 from dataclasses import dataclass, field
+from http import HTTPStatus
 from typing import TYPE_CHECKING, ClassVar
 
 import httpx
@@ -20,6 +21,13 @@ import httpx
 from domain_watcher.core.shared.errors import (
     DeliveryFailedError,
     NotificationError,
+)
+from domain_watcher.infrastructure._http import (
+    HTTP_2XX_MAX,
+    HTTP_2XX_MIN,
+    HTTP_4XX_MIN,
+    HTTP_5XX_MAX,
+    HTTP_5XX_MIN,
 )
 
 if TYPE_CHECKING:
@@ -93,7 +101,7 @@ class WebhookNotifier:
 
     def __repr__(self) -> str:
         # Header values may contain secrets ("Authorization: Bearer ..."): redact them.
-        safe_headers = {k: "***" for k in self.headers}
+        safe_headers = dict.fromkeys(self.headers, "***")
         return (
             f"WebhookNotifier(id={self.id!r}, url={self.url!r}, "
             f"method={self.method!r}, headers={safe_headers!r})"
@@ -105,7 +113,10 @@ class WebhookNotifier:
 
     async def send(self, alert: Alert, channel: Channel) -> None:
         del channel
-        assert self.client is not None
+        if self.client is None:
+            raise RuntimeError(
+                "WebhookNotifier.client is None — __post_init__ invariant violated"
+            )
         body = _render(self._template, alert)
         headers = {"Content-Type": self.content_type, **dict(self.headers)}
         try:
@@ -116,11 +127,14 @@ class WebhookNotifier:
             raise DeliveryFailedError(f"webhook transport failure: {exc}") from exc
 
         status = response.status_code
-        if 200 <= status < 300:
+        if HTTP_2XX_MIN <= status < HTTP_2XX_MAX:
             return
-        if status == 429 or 500 <= status < 600:
+        if (
+            status == HTTPStatus.TOO_MANY_REQUESTS
+            or HTTP_5XX_MIN <= status < HTTP_5XX_MAX
+        ):
             raise DeliveryFailedError(f"webhook http {status}")
-        if 400 <= status < 500:
+        if HTTP_4XX_MIN <= status < HTTP_5XX_MIN:
             raise NotificationError(f"webhook http {status}")
         raise DeliveryFailedError(f"webhook http {status}")
 

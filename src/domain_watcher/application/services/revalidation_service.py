@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from domain_watcher.core.parsing.events import (
@@ -59,12 +60,7 @@ class RevalidationService:
                 continue
             await self._revalidate(rule)
 
-    def _due(self, rule: LearnedRule, now: object) -> bool:
-        # ``now`` is a datetime; typed as object to avoid pulling datetime
-        # into the signature header for one comparison.
-        from datetime import datetime as _dt
-
-        assert isinstance(now, _dt)
+    def _due(self, rule: LearnedRule, now: datetime) -> bool:
         if rule.last_revalidated_at is None:
             return True
         return (now - rule.last_revalidated_at) >= self.revalidate_after.as_timedelta()
@@ -89,7 +85,9 @@ class RevalidationService:
             # Transient: do not demote.
             return
         except RuleValidationError as exc:
-            await self.learned_rules.disable(rule.id, reason=str(exc) or "validation_failed")
+            await self.learned_rules.disable(
+                rule.id, reason=str(exc) or "validation_failed"
+            )
             await self.publisher.publish(
                 WhoisRuleInvalidated(
                     occurred_at=self.clock.now(),

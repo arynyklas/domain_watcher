@@ -42,7 +42,11 @@ def _domain() -> MonitoredDomain:
         schedule=CheckSchedule("0 */6 * * *"),
         checker_id="rdap",
         notify_thresholds=(Duration.days(30), Duration.days(7), Duration.days(1)),
-        channels=(ChannelId("tg-ops"), ChannelId("email-team"), ChannelId("discord-eng")),
+        channels=(
+            ChannelId("tg-ops"),
+            ChannelId("email-team"),
+            ChannelId("discord-eng"),
+        ),
     )
 
 
@@ -69,7 +73,9 @@ def _build(
         sleeps.append(s)
 
     use_case = DispatchNotificationsUseCase(
-        policy=NotificationPolicy((Duration.days(30), Duration.days(7), Duration.days(1))),
+        policy=NotificationPolicy(
+            (Duration.days(30), Duration.days(7), Duration.days(1))
+        ),
         resolver=resolver,
         idempotency=idempotency,
         notifiers=notifiers,
@@ -98,7 +104,11 @@ async def test_dispatch_to_all_channels_records_idempotency() -> None:
         }
     )
     use_case = _build(
-        notifiers={"tg": notifier_tg, "email": notifier_email, "discord": notifier_discord},
+        notifiers={
+            "tg": notifier_tg,
+            "email": notifier_email,
+            "discord": notifier_discord,
+        },
         publisher=publisher,
         idempotency=idempotency,
         resolver=resolver,

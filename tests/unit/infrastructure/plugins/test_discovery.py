@@ -47,7 +47,11 @@ class _FakeEntryPoint:
 
     @property
     def dist(self) -> _FakeDist | None:
-        return _FakeDist(metadata=_FakeMetadata(self.dist_name)) if self.dist_name else None
+        return (
+            _FakeDist(metadata=_FakeMetadata(self.dist_name))
+            if self.dist_name
+            else None
+        )
 
     def load(self) -> object:
         if self.raises is not None:
@@ -157,7 +161,9 @@ def test_discover_import_failure_names_package_and_entrypoint(
         monkeypatch,
         {
             PluginGroup.NOTIFIERS.value: [
-                _FakeEntryPoint(name="webhook", value=None, dist_name="pkg-x", raises=boom),
+                _FakeEntryPoint(
+                    name="webhook", value=None, dist_name="pkg-x", raises=boom
+                ),
             ],
         },
     )
@@ -181,7 +187,9 @@ def test_discover_protocol_version_mismatch_refused(
         monkeypatch,
         {
             "domain_watcher.metadata": [
-                _FakeEntryPoint(name="protocol_version", value=bad_version, dist_name="pkg-a"),
+                _FakeEntryPoint(
+                    name="protocol_version", value=bad_version, dist_name="pkg-a"
+                ),
             ],
             PluginGroup.CHECKERS.value: [
                 _FakeEntryPoint(name="alpha", value=_CheckerA, dist_name="pkg-a"),
@@ -204,7 +212,9 @@ def test_discover_protocol_version_match_loads(monkeypatch: pytest.MonkeyPatch) 
         {
             "domain_watcher.metadata": [
                 _FakeEntryPoint(
-                    name="protocol_version", value=PLUGIN_PROTOCOL_VERSION, dist_name="pkg-a"
+                    name="protocol_version",
+                    value=PLUGIN_PROTOCOL_VERSION,
+                    dist_name="pkg-a",
                 ),
             ],
             PluginGroup.CHECKERS.value: [
@@ -269,7 +279,9 @@ def test_discover_skipped_filter_does_not_load(
         {
             PluginGroup.CHECKERS.value: [
                 _FakeEntryPoint(name="alpha", value=_CheckerA, dist_name="pkg-a"),
-                _FakeEntryPoint(name="boom", value=None, dist_name="pkg-b", raises=boom),
+                _FakeEntryPoint(
+                    name="boom", value=None, dist_name="pkg-b", raises=boom
+                ),
             ],
         },
     )

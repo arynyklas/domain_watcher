@@ -45,7 +45,8 @@ class Registry[T: _HasId]:
             raise ValueError(f"plugin missing id: {obj!r}")
         if plugin_id in self._items:
             raise PluginConflictError(
-                f"plugin id {plugin_id!r} already registered ({self._items[plugin_id]!r})"
+                f"plugin id {plugin_id!r} already registered "
+                f"({self._items[plugin_id]!r})"
             )
         self._items[plugin_id] = obj
 
@@ -54,7 +55,8 @@ class Registry[T: _HasId]:
             return self._items[plugin_id]
         except KeyError as exc:
             raise PluginNotFoundError(
-                f"no plugin registered for id {plugin_id!r}; known: {sorted(self._items)}"
+                f"no plugin registered for id {plugin_id!r}; "
+                f"known: {sorted(self._items)}"
             ) from exc
 
     def all(self) -> tuple[T, ...]:

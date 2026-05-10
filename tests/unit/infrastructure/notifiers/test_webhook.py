@@ -86,7 +86,9 @@ async def test_template_renders_all_placeholders() -> None:
         '"threshold": "${threshold}", "severity": "${severity}", '
         '"cycle": "${cycle_id}"}'
     )
-    n = WebhookNotifier(url=URL, body_template=body, client=client, headers={"X-Token": "abc"})
+    n = WebhookNotifier(
+        url=URL, body_template=body, client=client, headers={"X-Token": "abc"}
+    )
     await n.send(_alert(), _channel())
     await n.aclose()
     await client.aclose()

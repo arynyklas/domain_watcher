@@ -50,10 +50,14 @@ class TestTelegramNotifierContract(PluginContractTest):
     """Built-in Telegram adapter satisfies the public contract."""
 
     def make_ok(self) -> Any:
-        return TelegramNotifier(bot_token="t0k3n", chat_id="100", client=_client(ok=True))
+        return TelegramNotifier(
+            bot_token="t0k3n", chat_id="100", client=_client(ok=True)
+        )
 
     def make_failing(self) -> Any:
-        return TelegramNotifier(bot_token="t0k3n", chat_id="100", client=_client(ok=False))
+        return TelegramNotifier(
+            bot_token="t0k3n", chat_id="100", client=_client(ok=False)
+        )
 
 
 class TestDiscordNotifierContract(PluginContractTest):
@@ -122,10 +126,14 @@ class TestStubCheckerContract(CheckerContractTest):
         return _StubChecker(outcome=CheckOutcome.OK)
 
     def make_transient(self) -> Any:
-        return _StubChecker(outcome=CheckOutcome.TRANSIENT_ERROR, error="transport blip")
+        return _StubChecker(
+            outcome=CheckOutcome.TRANSIENT_ERROR, error="transport blip"
+        )
 
     def make_permanent(self) -> Any:
-        return _StubChecker(outcome=CheckOutcome.PERMANENT_ERROR, error="no such domain")
+        return _StubChecker(
+            outcome=CheckOutcome.PERMANENT_ERROR, error="no such domain"
+        )
 
 
 # ---------- Repo contract ----------------------------------------------------

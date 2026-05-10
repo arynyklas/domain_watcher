@@ -146,7 +146,8 @@ async def test_send_raises_delivery_failed_when_transport_down(
 
 @pytest.mark.parametrize(("name", "factory"), FACTORIES)
 async def test_send_is_at_least_once_safe(name: str, factory: NotifierFactory) -> None:
-    """The notifier itself MUST NOT track 'already sent' — calling twice succeeds twice."""
+    """The notifier itself MUST NOT track 'already sent' — calling twice
+    succeeds twice."""
     notifier = await factory(True)
     await notifier.send(_alert(), _channel(notifier.id))
     await notifier.send(_alert(), _channel(notifier.id))  # MUST NOT raise from dedup
@@ -201,7 +202,9 @@ def test_email_constructor_validates_settings_eagerly() -> None:
 # Permanent-failure mapping — the dispatcher uses this to distinguish from retryable.
 @pytest.mark.parametrize(
     ("name", "factory"),
-    [(n, f) for n, f in FACTORIES if n != "email"],  # email's permanent path is auth, separate
+    [
+        (n, f) for n, f in FACTORIES if n != "email"
+    ],  # email's permanent path is auth, separate
 )
 async def test_4xx_maps_to_permanent_error(name: str, factory: NotifierFactory) -> None:
     """A 4xx response is permanent: the operator must fix something before retry."""
@@ -211,7 +214,9 @@ async def test_4xx_maps_to_permanent_error(name: str, factory: NotifierFactory) 
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     if name == "telegram":
-        notifier: _Notifier = TelegramNotifier(bot_token="t", chat_id="1", client=client)
+        notifier: _Notifier = TelegramNotifier(
+            bot_token="t", chat_id="1", client=client
+        )
     elif name == "discord":
         notifier = DiscordNotifier(
             webhook_url="https://discord.test/api/webhooks/1/abc", client=client

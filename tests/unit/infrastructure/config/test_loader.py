@@ -170,7 +170,9 @@ def test_resolve_env_path_missing(tmp_path: Path) -> None:
     assert "DOMAIN_WATCHER_CONFIG" in str(exc.value)
 
 
-def test_resolve_default_path_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_default_path_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     p = tmp_path / "domain-watcher.yaml"
     p.write_text("version: 1\n")
@@ -189,7 +191,9 @@ def test_resolve_xdg_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     assert out == target
 
 
-def test_resolve_no_candidate_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_no_candidate_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ConfigError) as exc:
         resolve_config_path(env={"XDG_CONFIG_HOME": str(tmp_path / "xdg-empty")})

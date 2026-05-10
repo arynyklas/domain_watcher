@@ -61,8 +61,9 @@ def resolve_config_path(
 ) -> Path:
     """Resolve the configuration file path per ADR 0003 §2.
 
-    Precedence: ``cli_path`` > ``DOMAIN_WATCHER_CONFIG`` env > ``./domain-watcher.yaml``
-    > ``/etc/domain-watcher/config.yaml`` > ``$XDG_CONFIG_HOME/domain-watcher/config.yaml``.
+    Precedence: ``cli_path`` > ``DOMAIN_WATCHER_CONFIG`` env >
+    ``./domain-watcher.yaml`` > ``/etc/domain-watcher/config.yaml`` >
+    ``$XDG_CONFIG_HOME/domain-watcher/config.yaml``.
 
     Raises ``ConfigError`` if no candidate exists.
     """
@@ -78,7 +79,9 @@ def resolve_config_path(
     if env_path:
         p = Path(env_path)
         if not p.exists():
-            raise ConfigError(f"config file from DOMAIN_WATCHER_CONFIG does not exist: {p}")
+            raise ConfigError(
+                f"config file from DOMAIN_WATCHER_CONFIG does not exist: {p}"
+            )
         return p
 
     for candidate in _DEFAULT_LOCATIONS:

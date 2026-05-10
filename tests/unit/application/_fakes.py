@@ -211,7 +211,9 @@ class FakeLearnedRules:
         pipeline_version: int,
     ) -> int:
         rule_id = len(self.added) + 1
-        self.added.append((rule, sample_sha256, sample_domain, suggester_id, pipeline_version))
+        self.added.append(
+            (rule, sample_sha256, sample_domain, suggester_id, pipeline_version)
+        )
         self.by_tld.setdefault(rule.tld, []).append(rule)
         return rule_id
 

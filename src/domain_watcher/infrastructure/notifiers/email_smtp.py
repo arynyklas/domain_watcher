@@ -30,6 +30,7 @@ from domain_watcher.core.shared.errors import (
     DeliveryFailedError,
     NotificationError,
 )
+from domain_watcher.infrastructure._http import HTTP_4XX_MIN, HTTP_5XX_MIN
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -37,10 +38,13 @@ if TYPE_CHECKING:
     from domain_watcher.core.notification.entities import Alert, Channel
 
 
-def _build_message(*, alert: Alert, from_addr: str, to_addrs: Sequence[str]) -> EmailMessage:
+def _build_message(
+    *, alert: Alert, from_addr: str, to_addrs: Sequence[str]
+) -> EmailMessage:
     msg = EmailMessage()
     msg["Subject"] = (
-        f"[{alert.severity.value.upper()}] {alert.domain.value} expires in {alert.threshold}"
+        f"[{alert.severity.value.upper()}] {alert.domain.value} "
+        f"expires in {alert.threshold}"
     )
     msg["From"] = from_addr
     msg["To"] = ", ".join(to_addrs)
@@ -90,15 +94,21 @@ class EmailNotifier:
         if not self.smtp_host:
             raise ValueError("EmailNotifier.smtp_host is required")
         if self.smtp_port <= 0:
-            raise ValueError(f"EmailNotifier.smtp_port must be > 0, got {self.smtp_port}")
+            raise ValueError(
+                f"EmailNotifier.smtp_port must be > 0, got {self.smtp_port}"
+            )
         if not self.from_addr:
             raise ValueError("EmailNotifier.from_addr is required")
         if not self.to_addrs:
             raise ValueError("EmailNotifier.to_addrs must be non-empty")
         if self.use_starttls and self.use_tls:
-            raise ValueError("EmailNotifier: use_starttls and use_tls are mutually exclusive")
+            raise ValueError(
+                "EmailNotifier: use_starttls and use_tls are mutually exclusive"
+            )
         if not self.use_starttls and not self.use_tls and not self.allow_insecure:
-            raise ValueError("EmailNotifier: refusing plain SMTP unless allow_insecure=True")
+            raise ValueError(
+                "EmailNotifier: refusing plain SMTP unless allow_insecure=True"
+            )
 
     def __repr__(self) -> str:
         return (
@@ -109,7 +119,9 @@ class EmailNotifier:
 
     async def send(self, alert: Alert, channel: Channel) -> None:
         del channel
-        msg = _build_message(alert=alert, from_addr=self.from_addr, to_addrs=self.to_addrs)
+        msg = _build_message(
+            alert=alert, from_addr=self.from_addr, to_addrs=self.to_addrs
+        )
         try:
             await self._dispatch(msg)
         except aiosmtplib.SMTPAuthenticationError as exc:
@@ -124,7 +136,7 @@ class EmailNotifier:
         except aiosmtplib.SMTPResponseException as exc:
             # 4xx → transient, 5xx → permanent. aiosmtplib uses .code.
             code = getattr(exc, "code", 500)
-            if 400 <= code < 500:
+            if HTTP_4XX_MIN <= code < HTTP_5XX_MIN:
                 raise DeliveryFailedError(f"smtp transient {code}: {exc}") from exc
             raise NotificationError(f"smtp permanent {code}: {exc}") from exc
         except aiosmtplib.SMTPException as exc:

@@ -77,12 +77,15 @@ class ParseRule:
         groups = self.expires_regex.compiled.groups
         if groups != 1:
             raise ValueError(
-                f"ParseRule.expires_regex must have exactly one capture group, got {groups}"
+                "ParseRule.expires_regex must have exactly one capture group, "
+                f"got {groups}"
             )
         custom = self.date_format is DateFormat.CUSTOM
         has_strptime = self.strptime_format is not None
         if custom != has_strptime:
-            raise ValueError("ParseRule.strptime_format is required iff date_format == CUSTOM")
+            raise ValueError(
+                "ParseRule.strptime_format is required iff date_format == CUSTOM"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,7 +115,9 @@ class LearnedRule:
         if not self.tld:
             raise ValueError("LearnedRule.tld is required")
         if not _SHA256_HEX.match(self.sample_whois_sha256):
-            raise ValueError("LearnedRule.sample_whois_sha256 must be 64 lowercase hex chars")
+            raise ValueError(
+                "LearnedRule.sample_whois_sha256 must be 64 lowercase hex chars"
+            )
         if self.created_at.tzinfo is None or self.created_at.utcoffset() is None:
             raise ValueError("LearnedRule.created_at must be tz-aware UTC")
         if self.last_revalidated_at is not None:
@@ -121,18 +126,22 @@ class LearnedRule:
                 raise ValueError("LearnedRule.last_revalidated_at must be tz-aware UTC")
         if self.revalidation_count < 0:
             raise ValueError(
-                f"LearnedRule.revalidation_count must be >= 0, got {self.revalidation_count}"
+                f"LearnedRule.revalidation_count must be >= 0, "
+                f"got {self.revalidation_count}"
             )
         if self.pipeline_version < 1:
             raise ValueError(
-                f"LearnedRule.pipeline_version must be >= 1, got {self.pipeline_version}"
+                f"LearnedRule.pipeline_version must be >= 1, "
+                f"got {self.pipeline_version}"
             )
         if not self.suggester_id:
             raise ValueError("LearnedRule.suggester_id is required")
         custom = self.date_format is DateFormat.CUSTOM
         has_strptime = self.strptime_format is not None
         if custom != has_strptime:
-            raise ValueError("LearnedRule.strptime_format is required iff date_format == CUSTOM")
+            raise ValueError(
+                "LearnedRule.strptime_format is required iff date_format == CUSTOM"
+            )
 
     def as_parse_rule(self) -> ParseRule:
         """Project the static fields to a runtime-applicable ``ParseRule``."""

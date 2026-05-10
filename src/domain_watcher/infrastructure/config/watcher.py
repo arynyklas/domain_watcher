@@ -133,7 +133,13 @@ class ConfigFileWatcher[C]:
         if self._pending is not None:
             self._pending.cancel()
         loop = self._loop
-        assert loop is not None
+        if loop is None:
+            # ``_schedule_reload`` is wired via ``loop.call_soon_threadsafe``;
+            # the loop must already be running here. Surface a clear error
+            # if a future caller bypasses ``_on_change``.
+            raise RuntimeError(
+                "ConfigFileWatcher._schedule_reload called before loop bind"
+            )
         self._pending = loop.call_later(
             self._debounce_seconds,
             lambda: loop.create_task(self._do_reload()),
@@ -151,13 +157,17 @@ class ConfigFileWatcher[C]:
                 return
             except Exception:
                 # Unexpected error: log with stack but never crash the daemon.
-                _log.exception("config reload raised unexpectedly; keeping previous config")
+                _log.exception(
+                    "config reload raised unexpectedly; keeping previous config"
+                )
                 return
             try:
                 await self._holder.update(new_cfg)
             except Exception:
                 # Subscriber-isolated by ConfigHolder; this branch should be rare.
-                _log.exception("config holder.update raised; previous config still active")
+                _log.exception(
+                    "config holder.update raised; previous config still active"
+                )
 
     # ------------------------------------------------------------------
     # Test seam

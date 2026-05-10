@@ -39,7 +39,9 @@ async def test_different_channel_not_suppressed() -> None:
     domain = DomainName("example.com")
     th = Duration.days(30)
     cid = "a" * 16
-    await s.record(domain, th, cid, ChannelId("tg-ops"), datetime(2026, 5, 9, tzinfo=UTC))
+    await s.record(
+        domain, th, cid, ChannelId("tg-ops"), datetime(2026, 5, 9, tzinfo=UTC)
+    )
     assert await s.already_fired(domain, th, cid, ChannelId("tg-eng")) is False
 
 

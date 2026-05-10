@@ -67,13 +67,14 @@ def test_adapters_exports_are_stable() -> None:
 
 def test_adapters_module_does_not_re_export_core() -> None:
     """Adapters MUST NOT re-export anything whose ``__module__`` is in core."""
-    import domain_watcher.adapters as adapters
+    from domain_watcher import adapters
 
     for name in adapters.__all__:
         obj = getattr(adapters, name)
         module = getattr(obj, "__module__", "")
         assert not module.startswith("domain_watcher.core"), (
-            f"adapter re-export {name!r} (from {module}) leaks core into the adapters surface"
+            f"adapter re-export {name!r} (from {module}) leaks core "
+            "into the adapters surface"
         )
 
 
@@ -83,8 +84,18 @@ def test_core_subpackages_define_no_third_party_imports() -> None:
     """
     import domain_watcher.core as core_pkg
 
-    forbidden = {"httpx", "pydantic", "sqlalchemy", "apscheduler", "watchdog", "typer", "structlog"}
-    for module_info in pkgutil.walk_packages(core_pkg.__path__, prefix="domain_watcher.core."):
+    forbidden = {
+        "httpx",
+        "pydantic",
+        "sqlalchemy",
+        "apscheduler",
+        "watchdog",
+        "typer",
+        "structlog",
+    }
+    for module_info in pkgutil.walk_packages(
+        core_pkg.__path__, prefix="domain_watcher.core."
+    ):
         module = importlib.import_module(module_info.name)
         for name, value in inspect.getmembers(module):
             if not inspect.ismodule(value):

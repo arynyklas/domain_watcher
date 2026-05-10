@@ -91,28 +91,40 @@ class ParsingService:
             await self._emit_parse_failed(
                 domain, reason="no_matching_rule (fallback disabled)", attempted=False
             )
-            raise NoMatchingRuleError(f"no rule matched for {domain.value} (LLM fallback disabled)")
+            raise NoMatchingRuleError(
+                f"no rule matched for {domain.value} (LLM fallback disabled)"
+            )
 
         # Rate limits — host first, then TLD.
         if self.host_limiter is not None and not await self.host_limiter.acquire(
             self.suggester_host
         ):
-            await self._emit_parse_failed(domain, reason="rate_limit_host", attempted=False)
+            await self._emit_parse_failed(
+                domain, reason="rate_limit_host", attempted=False
+            )
             raise SuggestionError("rate_limit_host", transient=True)
-        if self.tld_limiter is not None and not await self.tld_limiter.acquire(domain.tld):
-            await self._emit_parse_failed(domain, reason="rate_limit_tld", attempted=False)
+        if self.tld_limiter is not None and not await self.tld_limiter.acquire(
+            domain.tld
+        ):
+            await self._emit_parse_failed(
+                domain, reason="rate_limit_tld", attempted=False
+            )
             raise SuggestionError("rate_limit_tld", transient=True)
 
         # Suggest.
         try:
             candidate = await self.suggester.suggest(raw, domain)
         except SuggestionError as exc:
-            await self._emit_parse_failed(domain, reason=f"suggestion_error: {exc}", attempted=True)
+            await self._emit_parse_failed(
+                domain, reason=f"suggestion_error: {exc}", attempted=True
+            )
             raise
 
         # Validate.
         try:
-            await self.validation_pipeline.validate(candidate, raw_whois=raw, domain=domain)
+            await self.validation_pipeline.validate(
+                candidate, raw_whois=raw, domain=domain
+            )
         except SuggestionError as exc:
             # Transient gate-5 failure: do NOT persist; leave for next attempt.
             await self._emit_parse_failed(
@@ -126,7 +138,9 @@ class ParsingService:
             raise
 
         # Persist + emit + re-parse.
-        sample_sha256 = hashlib.sha256(raw.encode("utf-8", errors="replace")).hexdigest()
+        sample_sha256 = hashlib.sha256(
+            raw.encode("utf-8", errors="replace")
+        ).hexdigest()
         new_rule_id = await self.learned_rules.add(
             candidate,
             sample_sha256=sample_sha256,

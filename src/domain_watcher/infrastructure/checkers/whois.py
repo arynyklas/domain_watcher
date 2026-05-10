@@ -37,8 +37,13 @@ def _looks_like_no_match(raw: str) -> bool:
     return any(p.search(raw) for p in _NO_MATCH_PATTERNS)
 
 
-def _extract_text(record: Any) -> str:
-    """Pull the raw WHOIS body out of whatever shape ``python-whois`` returned."""
+def _extract_text(record: Any) -> str:  # noqa: ANN401, PLR0911
+    """Pull the raw WHOIS body out of whatever shape ``python-whois`` returned.
+
+    ``record`` is opaque (the upstream lib has no stable type) and the body
+    can come in via several attributes, hence the explicit ladder of
+    early returns.
+    """
     text = getattr(record, "text", None)
     if isinstance(text, str) and text:
         return text
@@ -128,7 +133,9 @@ class _WhoisFetcher:
         # emit a non-OK result whose ``raw`` carries the text.
         return CheckResult(
             domain=domain,
-            outcome=CheckOutcome.TRANSIENT_ERROR,  # stays in retry budget if composite doesn't run
+            # ``TRANSIENT_ERROR`` keeps us in the retry budget if the composite
+            # parser never wires through.
+            outcome=CheckOutcome.TRANSIENT_ERROR,
             expires_at=None,
             source=self.id,
             raw=text,

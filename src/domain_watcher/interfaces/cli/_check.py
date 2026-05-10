@@ -13,7 +13,8 @@ Exit codes:
 
 JSON shape::
 
-  {"domain": "...", "outcome": "...", "expires_at": "...", "source": "...", "error": "..."}
+  {"domain": "...", "outcome": "...", "expires_at": "...",
+   "source": "...", "error": "..."}
 """
 
 from __future__ import annotations
@@ -56,7 +57,7 @@ def check_command(
 
     # Deferred composition import keeps `check` snappy even when the config
     # tree is broken (we still want to surface the load error first).
-    from domain_watcher.composition import compose_from_config
+    from domain_watcher.composition import compose_from_config  # noqa: PLC0415
 
     watcher = compose_from_config(cfg)
     chosen_checker = (
@@ -119,7 +120,7 @@ def check_command(
         typer.echo(f"check failed: {exc}", err=True)
         raise typer.Exit(code=3) from None
     except Exception:
-        import traceback
+        import traceback  # noqa: PLC0415 — only loaded on the unhandled-error path
 
         traceback.print_exc(file=sys.stderr)
         raise typer.Exit(code=3) from None

@@ -1,0 +1,47 @@
+name: CodeQL
+
+# Static-analysis security scan for the Python tree. Runs on every push
+# to main, on PRs targeting main, and weekly on Tuesday 04:00 UTC so that
+# new CodeQL queries land even when the tree is quiet.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: analyze (python)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python]
+    steps:
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: init codeql
+        uses: github/codeql-action/init@7fd177fa680c9881b53cdab4d346d32574c9f7f4  # v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: analyze
+        uses: github/codeql-action/analyze@7fd177fa680c9881b53cdab4d346d32574c9f7f4  # v3
+        with:
+          category: "/language:${{ matrix.language }}"

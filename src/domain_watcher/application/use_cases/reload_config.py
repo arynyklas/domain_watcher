@@ -81,9 +81,13 @@ class ConfigHolder[C]:
             try:
                 await fn(old, new)
             except Exception:
-                _log.exception("config holder: subscriber raised", extra={"sub": repr(fn)})
+                _log.exception(
+                    "config holder: subscriber raised", extra={"sub": repr(fn)}
+                )
 
-        await asyncio.gather(*[_safe(s) for s in self._subscribers], return_exceptions=False)
+        await asyncio.gather(
+            *[_safe(s) for s in self._subscribers], return_exceptions=False
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -201,7 +205,8 @@ class RegistrySubscriber[C, T]:
                         kept = await self.reload_hook(current, new_spec.settings)
                     except Exception:
                         _log.exception(
-                            "reload_hook raised for %r; falling back to replace", plugin_id
+                            "reload_hook raised for %r; falling back to replace",
+                            plugin_id,
                         )
                         kept = False
                     if kept:

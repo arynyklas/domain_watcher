@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import itertools
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from domain_watcher.core.monitoring.value_objects import LastCheck
@@ -41,13 +42,17 @@ class MonitoredDomain:
         seconds = [d.seconds for d in self.notify_thresholds]
         for prev, cur in itertools.pairwise(seconds):
             if cur >= prev:
-                raise ValueError("MonitoredDomain.notify_thresholds must be strictly descending")
+                raise ValueError(
+                    "MonitoredDomain.notify_thresholds must be strictly descending"
+                )
         if not self.channels:
             raise ValueError("MonitoredDomain.channels cannot be empty")
         if not self.checker_id:
             raise ValueError("MonitoredDomain.checker_id cannot be empty")
 
-    def with_check_result(self, result: CheckResult, *, at: datetime) -> MonitoredDomain:
+    def with_check_result(
+        self, result: CheckResult, *, at: datetime
+    ) -> MonitoredDomain:
         """Return a new instance with ``last_check`` updated.
 
         ``at`` is the wall-clock moment of the check (injected via TimeProvider
@@ -92,9 +97,7 @@ class MonitoredDomain:
         """
         if self.last_check is None:
             return True
-        from datetime import timedelta as _td
-
-        return now - self.last_check.at >= _td(hours=6)
+        return now - self.last_check.at >= timedelta(hours=6)
 
 
 __all__ = ["MonitoredDomain"]

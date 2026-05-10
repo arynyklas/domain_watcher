@@ -75,7 +75,9 @@ async def test_compose_from_valid_yaml_runs_one_check(
     env_for_valid_yaml: None,
 ) -> None:
     """End-to-end happy path: yaml → compose → check_now → event published."""
-    valid_yaml = Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    valid_yaml = (
+        Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    )
     cfg = load_config(valid_yaml)
 
     # The valid.yaml uses sqlite:///state.db. Override to memory so the test
@@ -113,7 +115,9 @@ async def test_compose_seeds_repository_with_initial_domains(
     env_for_valid_yaml: None,
 ) -> None:
     """``start()`` must persist every config-declared domain into the repo."""
-    valid_yaml = Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    valid_yaml = (
+        Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    )
     cfg = load_config(valid_yaml)
     cfg = cfg.model_copy(
         update={"runtime": cfg.runtime.model_copy(update={"state_db": "memory://"})}
@@ -159,7 +163,9 @@ async def test_compose_uses_mock_client_for_rdap(
     env_for_valid_yaml: None,
 ) -> None:
     """Sanity: the override hook actually replaces the production httpx client."""
-    valid_yaml = Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    valid_yaml = (
+        Path(__file__).resolve().parents[1] / "fixtures" / "config" / "valid.yaml"
+    )
     cfg = load_config(valid_yaml)
     cfg = cfg.model_copy(
         update={"runtime": cfg.runtime.model_copy(update={"state_db": "memory://"})}

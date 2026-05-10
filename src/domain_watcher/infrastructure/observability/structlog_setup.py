@@ -68,7 +68,7 @@ def _strip_url(value: str) -> str:
     return urlunparse((parsed.scheme, netloc, "", "", "", ""))
 
 
-def _scrub(value: Any) -> Any:
+def _scrub(value: Any) -> Any:  # noqa: ANN401 — log values are arbitrary
     """Recurse into mappings/sequences and apply the same scrubber."""
 
     if isinstance(value, dict):
@@ -78,7 +78,7 @@ def _scrub(value: Any) -> Any:
     return value
 
 
-def _scrub_kv(key: str, value: Any) -> Any:
+def _scrub_kv(key: str, value: Any) -> Any:  # noqa: ANN401 — log values are arbitrary
     if not isinstance(key, str):
         return _scrub(value)
     if _is_secret_key(key):
@@ -88,7 +88,9 @@ def _scrub_kv(key: str, value: Any) -> Any:
     return _scrub(value)
 
 
-def scrub_secrets(_logger: object, _name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+def scrub_secrets(
+    _logger: object, _name: str, event_dict: dict[str, Any]
+) -> dict[str, Any]:
     """structlog processor — redact known-secret keys and URLs.
 
     Operates on the top-level event_dict and recurses into nested

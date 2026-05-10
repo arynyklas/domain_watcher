@@ -1,0 +1,56 @@
+name: pre-commit-autoupdate
+
+# Weekly `pre-commit autoupdate` PR. Dependabot does not cover the
+# pre-commit ecosystem, so we run the autoupdater ourselves and open a
+# PR with the resulting `.pre-commit-config.yaml` diff.
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pre-commit-autoupdate
+  cancel-in-progress: false
+
+jobs:
+  autoupdate:
+    name: autoupdate hooks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: pin python
+        run: uv python install 3.12
+
+      - name: run autoupdate
+        run: uvx pre-commit autoupdate
+
+      - name: open pull request
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676  # v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(pre-commit): autoupdate hooks"
+          title: "chore(pre-commit): autoupdate hooks"
+          body: |
+            Weekly automated `pre-commit autoupdate` run.
+
+            Review the diff for any breaking hook changes before merging.
+          branch: chore/pre-commit-autoupdate
+          delete-branch: true
+          labels: |
+            dependencies
+            pre-commit

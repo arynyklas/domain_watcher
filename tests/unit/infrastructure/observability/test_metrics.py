@@ -39,7 +39,9 @@ def test_alerts_sent_counter_ticks() -> None:
     )
     alerts_sent_total.labels(channel="telegram", severity="warning").inc()
     alerts_sent_total.labels(channel="telegram", severity="warning").inc(2)
-    after = _read_metric("domain_watcher_alerts_sent_total", channel="telegram", severity="warning")
+    after = _read_metric(
+        "domain_watcher_alerts_sent_total", channel="telegram", severity="warning"
+    )
     assert after == before + 3
 
 
@@ -47,7 +49,9 @@ def test_checks_counter_separates_outcomes() -> None:
     checks_total.labels(checker="rdap", outcome="ok").inc()
     checks_total.labels(checker="rdap", outcome="permanent_error").inc()
     ok = _read_metric("domain_watcher_checks_total", checker="rdap", outcome="ok")
-    bad = _read_metric("domain_watcher_checks_total", checker="rdap", outcome="permanent_error")
+    bad = _read_metric(
+        "domain_watcher_checks_total", checker="rdap", outcome="permanent_error"
+    )
     assert ok >= 1
     assert bad >= 1
 

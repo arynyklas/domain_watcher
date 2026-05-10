@@ -1,0 +1,32 @@
+name: dependency-review
+
+# Inspects dependency changes in PRs and fails the check on any
+# vulnerability of severity >= high. Lighter than CodeQL: runs only on
+# diffs to direct dependency manifests.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dep-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: dependency review
+        uses: actions/dependency-review-action@4901385134134e04cec5fbe5ddfe3b2c5bd5d976  # v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure

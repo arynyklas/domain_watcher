@@ -21,7 +21,11 @@ def _now() -> datetime:
 def _domain(
     *,
     last_check: LastCheck | None = None,
-    thresholds: tuple[Duration, ...] = (Duration.days(30), Duration.days(7), Duration.days(1)),
+    thresholds: tuple[Duration, ...] = (
+        Duration.days(30),
+        Duration.days(7),
+        Duration.days(1),
+    ),
     channels: tuple[ChannelId, ...] = (ChannelId("tg-ops"),),
 ) -> MonitoredDomain:
     return MonitoredDomain(

@@ -7,6 +7,10 @@ deterministic time without depending on infrastructure modules.
 
 from __future__ import annotations
 
-from domain_watcher.core.shared.time_provider import FixedClock, SystemClock, TimeProvider
+from domain_watcher.core.shared.time_provider import (
+    FixedClock,
+    SystemClock,
+    TimeProvider,
+)
 
 __all__ = ["FixedClock", "SystemClock", "TimeProvider"]

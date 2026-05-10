@@ -109,7 +109,8 @@ class PluginContractTest:
             rep = repr(notifier)
             for value in self.secret_values(notifier):
                 assert value not in rep, (
-                    f"secret value {value!r} appeared in repr({type(notifier).__name__})"
+                    f"secret value {value!r} appeared in "
+                    f"repr({type(notifier).__name__})"
                 )
         finally:
             await _safe_aclose(notifier)

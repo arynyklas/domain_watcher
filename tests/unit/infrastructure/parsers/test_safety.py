@@ -185,7 +185,9 @@ _GOOD_RULE = ParseRule(
 async def test_wrapper_passes_through_when_breaker_closed() -> None:
     clock = FixedClock(NOW)
     inner = StubSuggester(rule=_GOOD_RULE)
-    wrapper = SuggesterCircuitBreaker(inner=inner, breaker=default_circuit_breaker(clock))
+    wrapper = SuggesterCircuitBreaker(
+        inner=inner, breaker=default_circuit_breaker(clock)
+    )
     out = await wrapper.suggest("E: 2030-01-01", DomainName("example.com"))
     assert out == _GOOD_RULE
     assert inner.calls == 1
@@ -217,7 +219,9 @@ async def test_wrapper_does_not_rate_limit() -> None:
     """Per ADR 0006 §7 the wrapper is transport health only."""
     clock = FixedClock(NOW)
     inner = StubSuggester(rule=_GOOD_RULE)
-    wrapper = SuggesterCircuitBreaker(inner=inner, breaker=default_circuit_breaker(clock))
+    wrapper = SuggesterCircuitBreaker(
+        inner=inner, breaker=default_circuit_breaker(clock)
+    )
     # Hammer it: no rate-limit rejection should ever occur.
     for _ in range(50):
         await wrapper.suggest("E: 2030-01-01", DomainName("example.com"))

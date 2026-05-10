@@ -56,7 +56,9 @@ async def test_subscribe_object_protocol() -> None:
     seen: list[StubConfig] = []
 
     class Sub:
-        async def on_config_changed(self, old: StubConfig | None, new: StubConfig) -> None:
+        async def on_config_changed(
+            self, old: StubConfig | None, new: StubConfig
+        ) -> None:
             seen.append(new)
 
     holder.subscribe_object(Sub())

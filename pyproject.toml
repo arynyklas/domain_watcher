@@ -122,9 +122,32 @@ select = [
 # obscures the dependency surface for no run-time gain.
 "src/domain_watcher/interfaces/library/**/*.py" = ["TC001", "TC003"]
 "src/domain_watcher/composition.py" = ["TC001", "TC003"]
+# The contract harness ships under src/ but executes as a test framework:
+# ``assert`` is the assertion mechanism and the ``Any``-typed ``make_*``
+# helpers exist precisely so adapters can inject arbitrary fixtures.
+"src/domain_watcher/testing/**/*.py" = ["S101", "ANN401"]
 # Tests use pathlib synchronously inside async test functions; the rule
 # only matters for trio/anyio runtimes which we don't target.
-"tests/**/*.py" = ["ASYNC240", "TC001", "TC003"]
+# Tests also don't need the full annotation/security/magic-value ceremony
+# the rest of the codebase does — assert is the assertion mechanism,
+# fake credentials are the point of fixtures, and "5 == len(things)"
+# is a clearer intent than introducing a named constant.
+"tests/**/*.py" = [
+    "ASYNC240", "TC001", "TC003",
+    "S101",                                  # assert is the test framework
+    "S105", "S106", "S107",                  # fake credentials in fixtures
+    "S603", "S607",                          # subprocess in test infra
+    "PLR2004",                               # literal comparisons in tests
+    "PLR0913",                               # fixtures take many parameters
+    "PLC0415",                               # localized imports for isolation
+    "PLW0108",                               # explicit lambdas read clearer
+    "ANN001", "ANN201", "ANN202", "ANN401",  # tests don't need annotations
+    "N802", "N806",                          # test names mirror SUT shape
+]
+"conftest.py" = ["ANN001", "PLR2004"]
+# Sphinx config has one long ``release = tomllib.loads(...)`` expression
+# that the formatter chooses not to wrap; fixing it would obscure intent.
+"docs/conf.py" = ["E501"]
 
 [tool.ty]
 # ty is the Astral type checker (mypy successor). Configure rules
@@ -136,9 +159,20 @@ rules.unused-ignore-comment = "warn"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers --cov=domain_watcher --cov-report=term-missing --cov-report=xml"
 markers = [
     "integration: tests requiring external services (Docker, network, etc.)",
     "flaky: tests that may need rerun on transient failure (live LLM, etc.)",
 ]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/domain_watcher"]
+branch = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]

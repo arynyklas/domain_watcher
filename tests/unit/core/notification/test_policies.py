@@ -61,7 +61,8 @@ def test_no_prev_no_threshold_crossed() -> None:
 
 
 def test_no_renewal_no_new_crossing() -> None:
-    # prev already inside the 30d window; current still inside 30d; same cycle → no alert.
+    # prev already inside the 30d window; current still inside 30d;
+    # same cycle → no alert.
     domain = DomainName("example.com")
     expires = _now() + timedelta(days=20)
     prev = LastCheck(
@@ -125,7 +126,11 @@ def test_thresholds_evaluated_descending() -> None:
     # Returned in descending threshold order.
     assert [a.threshold for a in alerts] == list(THRESHOLDS)
     severities = [a.severity for a in alerts]
-    assert severities == [AlertSeverity.INFO, AlertSeverity.WARNING, AlertSeverity.CRITICAL]
+    assert severities == [
+        AlertSeverity.INFO,
+        AlertSeverity.WARNING,
+        AlertSeverity.CRITICAL,
+    ]
 
 
 def test_alerts_for_pure_no_idempotency_consult() -> None:
@@ -134,14 +139,20 @@ def test_alerts_for_pure_no_idempotency_consult() -> None:
     domain = DomainName("example.com")
     expires = _now() + timedelta(days=30)
     policy = NotificationPolicy(thresholds=THRESHOLDS)
-    a = policy.alerts_for(previous=None, current=_ok_result(domain, expires), now=_now())
-    b = policy.alerts_for(previous=None, current=_ok_result(domain, expires), now=_now())
+    a = policy.alerts_for(
+        previous=None, current=_ok_result(domain, expires), now=_now()
+    )
+    b = policy.alerts_for(
+        previous=None, current=_ok_result(domain, expires), now=_now()
+    )
     assert a == b
 
 
 def test_severity_mapping_default() -> None:
     domain = DomainName("example.com")
-    policy = NotificationPolicy(thresholds=(Duration.days(30), Duration.days(7), Duration.days(1)))
+    policy = NotificationPolicy(
+        thresholds=(Duration.days(30), Duration.days(7), Duration.days(1))
+    )
     # 0.5 days → all three thresholds crossed → 30d INFO, 7d WARNING, 1d CRITICAL.
     alerts = policy.alerts_for(
         previous=None,

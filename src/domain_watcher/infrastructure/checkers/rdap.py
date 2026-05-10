@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from http import HTTPStatus
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import httpx
@@ -20,6 +21,11 @@ from domain_watcher.core.checking.value_objects import CheckOutcome, CheckResult
 from domain_watcher.core.shared.errors import (
     PermanentCheckError,
     TransientCheckError,
+)
+from domain_watcher.infrastructure._http import (
+    HTTP_4XX_MIN,
+    HTTP_5XX_MAX,
+    HTTP_5XX_MIN,
 )
 
 if TYPE_CHECKING:
@@ -62,7 +68,7 @@ class RdapChecker:
     bootstrap: BootstrapResolver
     client: httpx.AsyncClient
 
-    async def check(self, domain: DomainName) -> CheckResult:
+    async def check(self, domain: DomainName) -> CheckResult:  # noqa: PLR0911
         try:
             base = await self.bootstrap.base_url_for(domain.tld)
         except TransientCheckError as exc:
@@ -94,7 +100,7 @@ class RdapChecker:
                 error=f"{type(exc).__name__}: {exc}",
             )
 
-        if response.status_code == 404:
+        if response.status_code == HTTPStatus.NOT_FOUND:
             return CheckResult(
                 domain=domain,
                 outcome=CheckOutcome.PERMANENT_ERROR,
@@ -102,7 +108,7 @@ class RdapChecker:
                 source=self.id,
                 error="rdap 404 (no such domain)",
             )
-        if 500 <= response.status_code < 600:
+        if HTTP_5XX_MIN <= response.status_code < HTTP_5XX_MAX:
             return CheckResult(
                 domain=domain,
                 outcome=CheckOutcome.TRANSIENT_ERROR,
@@ -110,7 +116,7 @@ class RdapChecker:
                 source=self.id,
                 error=f"rdap http {response.status_code}",
             )
-        if 400 <= response.status_code < 500:
+        if HTTP_4XX_MIN <= response.status_code < HTTP_5XX_MIN:
             return CheckResult(
                 domain=domain,
                 outcome=CheckOutcome.PERMANENT_ERROR,

@@ -124,7 +124,9 @@ _BACKENDS = [
     pytest.param("sqlite", id="sqlite"),
 ]
 if os.environ.get("LIVE_PG") == "1":  # pragma: no cover
-    _BACKENDS.append(pytest.param("postgres", id="postgres", marks=pytest.mark.integration))
+    _BACKENDS.append(
+        pytest.param("postgres", id="postgres", marks=pytest.mark.integration)
+    )
 
 
 def _factory(name: str):

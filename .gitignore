@@ -6,8 +6,8 @@ __pycache__/
 .ruff_cache/
 dist/
 *.egg-info/
-.coverage
-.coverage.*
+.coverage*
+coverage.*
 htmlcov/
 state.db
 state.db-*

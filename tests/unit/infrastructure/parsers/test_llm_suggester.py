@@ -40,7 +40,9 @@ def patched_acompletion():
 async def test_happy_path_returns_parse_rule(patched_acompletion: AsyncMock) -> None:
     patched_acompletion.return_value = _make_response(_good_payload())
     s = LiteLLMRuleSuggester(model="ollama/gemma3", api_base="http://localhost:11434")
-    rule = await s.suggest("Registry Expiry Date: 2030-01-01\n", DomainName("example.com"))
+    rule = await s.suggest(
+        "Registry Expiry Date: 2030-01-01\n", DomainName("example.com")
+    )
     assert rule.tld == "com"
     assert rule.date_format is DateFormat.ISO_8601
     assert rule.expires_regex.compiled.search("Registry Expiry Date: 2030-01-01")
@@ -74,14 +76,18 @@ async def test_no_api_key_omits_kwarg(patched_acompletion: AsyncMock) -> None:
     assert "api_key" not in kwargs
 
 
-async def test_malformed_json_raises_suggestion_error(patched_acompletion: AsyncMock) -> None:
+async def test_malformed_json_raises_suggestion_error(
+    patched_acompletion: AsyncMock,
+) -> None:
     patched_acompletion.return_value = _make_response("not actually json")
     s = LiteLLMRuleSuggester(model="ollama/gemma3")
     with pytest.raises(SuggestionError, match="malformed JSON"):
         await s.suggest("x", DomainName("example.com"))
 
 
-async def test_invalid_regex_raises_suggestion_error(patched_acompletion: AsyncMock) -> None:
+async def test_invalid_regex_raises_suggestion_error(
+    patched_acompletion: AsyncMock,
+) -> None:
     payload = json.dumps(
         {"expires_regex": "[unclosed", "date_format": "iso8601", "timezone": "UTC"}
     )
@@ -91,7 +97,9 @@ async def test_invalid_regex_raises_suggestion_error(patched_acompletion: AsyncM
         await s.suggest("x", DomainName("example.com"))
 
 
-async def test_regex_without_capture_group_raises(patched_acompletion: AsyncMock) -> None:
+async def test_regex_without_capture_group_raises(
+    patched_acompletion: AsyncMock,
+) -> None:
     payload = json.dumps(
         {
             "expires_regex": "Registry Expiry Date: \\S+",  # no group
@@ -119,7 +127,9 @@ async def test_unknown_date_format_raises(patched_acompletion: AsyncMock) -> Non
         await s.suggest("x", DomainName("example.com"))
 
 
-async def test_custom_date_format_requires_strptime(patched_acompletion: AsyncMock) -> None:
+async def test_custom_date_format_requires_strptime(
+    patched_acompletion: AsyncMock,
+) -> None:
     payload = json.dumps(
         {
             "expires_regex": r"Foo:\s+(\S+)",
@@ -144,7 +154,9 @@ async def test_timeout_raises_transient(patched_acompletion: AsyncMock) -> None:
     assert exc_info.value.transient is True
 
 
-async def test_connection_error_raises_transient(patched_acompletion: AsyncMock) -> None:
+async def test_connection_error_raises_transient(
+    patched_acompletion: AsyncMock,
+) -> None:
     patched_acompletion.side_effect = litellm.exceptions.APIConnectionError(
         message="conn refused", llm_provider="ollama", model="ollama/gemma3"
     )

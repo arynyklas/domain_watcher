@@ -39,6 +39,7 @@ from domain_watcher.application.event_bus import InProcessEventBus
 from domain_watcher.application.services.parsing_service import ParsingService
 from domain_watcher.core.checking.policies import RetryPolicy
 from domain_watcher.core.checking.ports import ExpirationChecker
+from domain_watcher.core.checking.value_objects import CheckOutcome
 from domain_watcher.core.monitoring.entities import MonitoredDomain
 from domain_watcher.core.monitoring.value_objects import (
     ChannelId,
@@ -51,7 +52,11 @@ from domain_watcher.core.parsing.value_objects import (
     ParseRule,
     RegexPattern,
 )
-from domain_watcher.core.shared.errors import ConfigError
+from domain_watcher.core.shared.errors import (
+    ConfigError,
+    PermanentCheckError,
+    TransientCheckError,
+)
 from domain_watcher.core.shared.time_provider import SystemClock, TimeProvider
 from domain_watcher.core.shared.value_objects import DomainName, Duration
 from domain_watcher.infrastructure.checkers._iana_bootstrap import IanaBootstrap
@@ -144,13 +149,18 @@ def compose_from_config(
     # Observability: metrics counters subscribe to the bus before any
     # event flows. structlog is configured idempotently — repeated calls
     # (hot reload) replace the processor chain.
-    from domain_watcher.application import metrics_subscriber
-    from domain_watcher.infrastructure.observability.structlog_setup import (
+    # Both imports are deliberately late: ``metrics_subscriber`` pulls the
+    # prometheus_client module, and ``structlog_setup`` is only relevant
+    # when composition runs (not when the module is merely imported).
+    from domain_watcher.application import metrics_subscriber  # noqa: PLC0415
+    from domain_watcher.infrastructure.observability.structlog_setup import (  # noqa: PLC0415
         configure as _configure_logging,
     )
 
     if not config.runtime.scrub_secrets:
-        _log.warning("structlog_secret_scrubber_disabled — credentials may appear in logs")
+        _log.warning(
+            "structlog_secret_scrubber_disabled — credentials may appear in logs"
+        )
     _configure_logging(
         json_format=config.runtime.log_format == "json",
         scrub=config.runtime.scrub_secrets,
@@ -198,7 +208,9 @@ def compose_from_config(
         aclose_hooks.append(repos.aclose)
 
     # Notification policy + retry
-    policy = NotificationPolicy(thresholds=tuple(config.notification_defaults.thresholds))
+    policy = NotificationPolicy(
+        thresholds=tuple(config.notification_defaults.thresholds)
+    )
     retry_policy = RetryPolicy(
         max_attempts=config.notification_defaults.retry.max_attempts,
         base_delay=config.notification_defaults.retry.base_delay,
@@ -206,7 +218,9 @@ def compose_from_config(
     )
 
     _defaults = tuple(config.notification_defaults.thresholds)
-    initial_domains = tuple(_build_domain(d, defaults=_defaults) for d in config.domains)
+    initial_domains = tuple(
+        _build_domain(d, defaults=_defaults) for d in config.domains
+    )
 
     # Validate domain references against registries
     known_checker_ids = {c.id for c in checker_registry.all()}
@@ -229,7 +243,11 @@ def compose_from_config(
 
     start_hooks: list[Callable[[], Awaitable[None]]] = []
     if config.runtime.metrics.enabled:
-        from domain_watcher.infrastructure.observability.metrics import MetricsServer
+        # Late import: prometheus_client is only loaded when ``/metrics``
+        # is enabled; CLIs that just check or list don't pay for it.
+        from domain_watcher.infrastructure.observability.metrics import (  # noqa: PLC0415
+            MetricsServer,
+        )
 
         metrics_server = MetricsServer(
             host=config.runtime.metrics.host,
@@ -290,15 +308,15 @@ def _build_repos(state_db: str) -> _ComposedRepos:
     repos = _ComposedRepos(
         domain_repo=cast(
             "MonitoredDomainRepository",
-            _LazySession(session, lambda s: SqlMonitoredDomainRepo(s)),
+            _LazySession(session, SqlMonitoredDomainRepo),
         ),
         idempotency=cast(
             "IdempotencyStore",
-            _LazySession(session, lambda s: SqlIdempotencyStore(s)),
+            _LazySession(session, SqlIdempotencyStore),
         ),
         learned_rules=cast(
             "LearnedRulesRepository",
-            _LazySession(session, lambda s: SqlLearnedRulesRepo(s)),
+            _LazySession(session, SqlLearnedRulesRepo),
         ),
         aclose=session.aclose,
     )
@@ -358,12 +376,12 @@ class _LazySession:
         self._factory = factory
         self._repo: object | None = None
 
-    def _resolve(self) -> Any:
+    def _resolve(self) -> Any:  # noqa: ANN401 — repo type is opaque (any registered repo)
         if self._repo is None:
             self._repo = self._factory(self._handle.get())
         return self._repo
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401 — forwards to opaque repo
         return getattr(self._resolve(), name)
 
 
@@ -396,7 +414,8 @@ def _build_parsing_service(
         sug_settings = dict(fb.suggester.settings)
         if fb.suggester.type != "litellm":
             raise ConfigError(
-                f"llm_fallback.suggester.type must be 'litellm', got {fb.suggester.type!r}"
+                "llm_fallback.suggester.type must be 'litellm', "
+                f"got {fb.suggester.type!r}"
             )
         litellm_suggester = LiteLLMRuleSuggester(
             model=str(sug_settings.get("model", "")),
@@ -419,10 +438,14 @@ def _build_parsing_service(
         )
         max_per_hour = fb.safety.max_learn_per_hour
         if max_per_hour > 0:
-            host_lim = TokenBucketLimiter(capacity=max_per_hour, window_seconds=3600.0, clock=clock)
+            host_lim = TokenBucketLimiter(
+                capacity=max_per_hour, window_seconds=3600.0, clock=clock
+            )
         max_per_tld = fb.safety.max_learn_per_tld_per_24h
         if max_per_tld > 0:
-            tld_lim = PerTldLimiter(capacity=max_per_tld, window_seconds=86400.0, clock=clock)
+            tld_lim = PerTldLimiter(
+                capacity=max_per_tld, window_seconds=86400.0, clock=clock
+            )
 
     parsing_service = ParsingService(
         parser=parser,
@@ -457,7 +480,9 @@ def _to_parse_rule(raw: WhoisRule) -> ParseRule:
 
 @dataclass(slots=True)
 class _FetcherToCrossCheck:
-    """Adapter: ``_WhoisFetcher.fetch()`` → ``CrossCheckFetcher.fetch_raw()`` (raw string).
+    """Adapter: ``_WhoisFetcher.fetch()`` → ``CrossCheckFetcher.fetch_raw()``.
+
+    Returns the raw string the cross-check expects.
 
     Maps the fetcher's ``raw`` field to the cross-check's expected ``str``
     return; raises the same ``Transient/PermanentCheckError`` shape the
@@ -467,12 +492,6 @@ class _FetcherToCrossCheck:
     fetcher: _WhoisFetcher
 
     async def fetch_raw(self, domain: DomainName) -> str:
-        from domain_watcher.core.checking.value_objects import CheckOutcome
-        from domain_watcher.core.shared.errors import (
-            PermanentCheckError,
-            TransientCheckError,
-        )
-
         result = await self.fetcher.fetch(domain)
         if result.raw is not None and result.raw.strip():
             return result.raw
@@ -528,7 +547,9 @@ def _factory_rdap(
     settings = cc.settings or {}
     timeout = _coerce_seconds(settings.get("timeout", 10.0))
     bootstrap_url = settings.get("bootstrap_url")
-    client = http_client if http_client is not None else httpx.AsyncClient(timeout=timeout)
+    client = (
+        http_client if http_client is not None else httpx.AsyncClient(timeout=timeout)
+    )
     bootstrap = (
         IanaBootstrap(client=client, url=bootstrap_url)
         if bootstrap_url is not None
@@ -570,7 +591,9 @@ def _factory_script(
     settings = cc.settings or {}
     raw_command = settings.get("command")
     if not isinstance(raw_command, list) or not raw_command:
-        raise ConfigError(f"script checker {cc.id!r}: settings.command must be a non-empty list")
+        raise ConfigError(
+            f"script checker {cc.id!r}: settings.command must be a non-empty list"
+        )
     command = tuple(str(p) for p in raw_command)
     timeout = _coerce_seconds(settings.get("timeout", 30.0))
     env = settings.get("env")
@@ -709,7 +732,7 @@ class _IdAlias:
         self._inner = inner
         self.id = instance_id
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401 — forwards to wrapped adapter
         return getattr(self._inner, name)
 
 

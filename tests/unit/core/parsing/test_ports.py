@@ -64,7 +64,9 @@ class _FakeLearnedRepo:
     async def disable(self, rule_id: int, reason: str) -> None:
         del rule_id, reason
 
-    async def list_all(self, *, include_disabled: bool = False) -> Sequence[LearnedRule]:
+    async def list_all(
+        self, *, include_disabled: bool = False
+    ) -> Sequence[LearnedRule]:
         del include_disabled
         return []
 

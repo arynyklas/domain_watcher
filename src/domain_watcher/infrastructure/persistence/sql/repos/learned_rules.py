@@ -39,10 +39,15 @@ def _row_to_learned(row: LearnedRuleRow) -> LearnedRule:
         pipeline_version=row.pipeline_version,
         sample_whois_sha256=row.sample_whois_sha256,
         sample_domain=DomainName(row.sample_domain),
-        created_at=row.created_at if row.created_at.tzinfo else row.created_at.replace(tzinfo=UTC),
+        created_at=(
+            row.created_at
+            if row.created_at.tzinfo
+            else row.created_at.replace(tzinfo=UTC)
+        ),
         last_revalidated_at=(
             row.last_revalidated_at.replace(tzinfo=UTC)
-            if row.last_revalidated_at is not None and row.last_revalidated_at.tzinfo is None
+            if row.last_revalidated_at is not None
+            and row.last_revalidated_at.tzinfo is None
             else row.last_revalidated_at
         ),
         revalidation_count=row.revalidation_count,
@@ -104,7 +109,8 @@ class SqlLearnedRulesRepo:
         except IntegrityError as exc:
             await self._session.rollback()
             raise ValueError(
-                f"duplicate learned rule for tld={rule.tld!r} regex={rule.expires_regex.raw!r}"
+                f"duplicate learned rule for tld={rule.tld!r} "
+                f"regex={rule.expires_regex.raw!r}"
             ) from exc
         return int(row.id)
 

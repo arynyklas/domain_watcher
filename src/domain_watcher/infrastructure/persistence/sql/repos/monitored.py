@@ -9,6 +9,7 @@ nothing.
 from __future__ import annotations
 
 import json
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 from sqlalchemy import select
@@ -35,15 +36,15 @@ def _ensure_utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        from datetime import UTC
-
         return dt.replace(tzinfo=UTC)
     return dt
 
 
 def _row_to_domain(row: MonitoredDomainRow) -> MonitoredDomain:
     thresholds = tuple(
-        Duration.from_seconds(int(s)) for s in row.notify_thresholds_secs.split(",") if s
+        Duration.from_seconds(int(s))
+        for s in row.notify_thresholds_secs.split(",")
+        if s
     )
     channels = tuple(ChannelId(c) for c in row.channels.split(",") if c)
     last_check = None
@@ -72,7 +73,9 @@ def _domain_to_values(domain: MonitoredDomain) -> dict[str, object]:
         "name": domain.name.value,
         "cron": domain.schedule.cron,
         "checker_id": domain.checker_id,
-        "notify_thresholds_secs": ",".join(str(d.seconds) for d in domain.notify_thresholds),
+        "notify_thresholds_secs": ",".join(
+            str(d.seconds) for d in domain.notify_thresholds
+        ),
         "channels": ",".join(c.value for c in domain.channels),
         "metadata_json": json.dumps(dict(domain.metadata), sort_keys=True),
         "last_check_at": last.at if last is not None else None,

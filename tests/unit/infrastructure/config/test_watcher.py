@@ -63,7 +63,9 @@ async def test_validation_failure_keeps_old_config(
     p = tmp_path / "cfg.yaml"
     p.write_text("ignored: true\n")
 
-    holder: ConfigHolder[_StubConfig] = ConfigHolder(initial=_StubConfig(version=1, label="orig"))
+    holder: ConfigHolder[_StubConfig] = ConfigHolder(
+        initial=_StubConfig(version=1, label="orig")
+    )
 
     calls = {"n": 0}
 
@@ -75,10 +77,15 @@ async def test_validation_failure_keeps_old_config(
 
     watcher = ConfigFileWatcher(p, loader, holder, debounce_seconds=0.0)
 
-    with caplog.at_level(logging.ERROR, logger="domain_watcher.infrastructure.config.watcher"):
+    with caplog.at_level(
+        logging.ERROR, logger="domain_watcher.infrastructure.config.watcher"
+    ):
         await watcher.trigger_reload_for_tests()
     assert holder.current == _StubConfig(version=1, label="orig")
-    assert any("config reload failed" in r.message and "rdao" in r.message for r in caplog.records)
+    assert any(
+        "config reload failed" in r.message and "rdao" in r.message
+        for r in caplog.records
+    )
 
     # Successful retry replaces the config.
     await watcher.trigger_reload_for_tests()
@@ -99,7 +106,9 @@ async def test_unexpected_loader_error_isolated(
 
     watcher = ConfigFileWatcher(p, loader, holder, debounce_seconds=0.0)
 
-    with caplog.at_level(logging.ERROR, logger="domain_watcher.infrastructure.config.watcher"):
+    with caplog.at_level(
+        logging.ERROR, logger="domain_watcher.infrastructure.config.watcher"
+    ):
         await watcher.trigger_reload_for_tests()  # MUST NOT raise
     assert holder.current == _StubConfig(version=1)
     assert any("config reload raised unexpectedly" in r.message for r in caplog.records)
@@ -192,7 +201,9 @@ async def test_real_observer_handles_atomic_replace(tmp_path: Path) -> None:
         tmp.write_text("v: replaced\n")
         tmp.replace(target)  # atomic move-over
         ok = await _wait_until(
-            lambda: holder.current is not None and holder.current.label == "v: replaced",
+            lambda: (
+                holder.current is not None and holder.current.label == "v: replaced"
+            ),
             timeout=2.0,
         )
         assert ok, f"holder did not pick up replace; seen={seen}"

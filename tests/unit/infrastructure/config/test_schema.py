@@ -31,7 +31,9 @@ def test_duration_field_accepts_string() -> None:
 
 
 def test_duration_field_accepts_duration_instance() -> None:
-    nd = NotificationDefaults(thresholds=(Duration.days(30), Duration.days(7), Duration.days(1)))
+    nd = NotificationDefaults(
+        thresholds=(Duration.days(30), Duration.days(7), Duration.days(1))
+    )
     assert nd.thresholds[1].seconds == 7 * 86400
 
 
@@ -219,7 +221,9 @@ def _minimal_config(**overrides: object) -> Config:
         "version": 1,
         "checkers": (CheckerConfig(id="rdap", type="rdap"),),
         "notifiers": (
-            NotifierConfig(id="tg", type="telegram", settings={"bot_token": "x", "chat_id": "1"}),
+            NotifierConfig(
+                id="tg", type="telegram", settings={"bot_token": "x", "chat_id": "1"}
+            ),
         ),
         "domains": (
             DomainEntry(
@@ -286,10 +290,14 @@ def test_duplicate_notifier_id_rejected() -> None:
         _minimal_config(
             notifiers=(
                 NotifierConfig(
-                    id="tg", type="telegram", settings={"bot_token": "x", "chat_id": "1"}
+                    id="tg",
+                    type="telegram",
+                    settings={"bot_token": "x", "chat_id": "1"},
                 ),
                 NotifierConfig(
-                    id="tg", type="telegram", settings={"bot_token": "y", "chat_id": "2"}
+                    id="tg",
+                    type="telegram",
+                    settings={"bot_token": "y", "chat_id": "2"},
                 ),
             ),
         )

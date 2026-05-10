@@ -58,7 +58,9 @@ class RepoContractTest:
     async def make_repos(self) -> AsyncIterator[tuple[Any, Any, Any]]:
         """Override to yield ``(monitored, learned, idempotency)``."""
 
-        raise NotImplementedError("Override make_repos() — see RepoContractTest docstring.")
+        raise NotImplementedError(
+            "Override make_repos() — see RepoContractTest docstring."
+        )
         yield  # pragma: no cover — keeps the function a generator for type-check
 
     @pytest.mark.asyncio

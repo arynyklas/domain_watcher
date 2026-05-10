@@ -58,7 +58,9 @@ class MonitoredDomainRow(Base):
     channels: Mapped[str] = mapped_column(Text, nullable=False)
     """Comma-separated channel ids."""
     metadata_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
-    last_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_check_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_check_outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
     last_check_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -96,7 +98,9 @@ class LearnedRuleRow(Base):
 
     __table_args__ = (
         UniqueConstraint("tld", "expires_regex", name="uq_learned_rules_tld_regex"),
-        Index("ix_learned_rules_tld_active", "tld", postgresql_where="disabled = false"),
+        Index(
+            "ix_learned_rules_tld_active", "tld", postgresql_where="disabled = false"
+        ),
     )
 
 

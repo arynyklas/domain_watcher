@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import html
 from dataclasses import dataclass, field
+from http import HTTPStatus
 from typing import TYPE_CHECKING, ClassVar
 
 import httpx
@@ -23,6 +24,13 @@ import httpx
 from domain_watcher.core.shared.errors import (
     DeliveryFailedError,
     NotificationError,
+)
+from domain_watcher.infrastructure._http import (
+    HTTP_2XX_MAX,
+    HTTP_2XX_MIN,
+    HTTP_4XX_MIN,
+    HTTP_5XX_MAX,
+    HTTP_5XX_MIN,
 )
 
 if TYPE_CHECKING:
@@ -78,7 +86,8 @@ class TelegramNotifier:
             raise ValueError("TelegramNotifier.chat_id is required")
         if self.parse_mode not in {"HTML", "MarkdownV2"}:
             raise ValueError(
-                f"TelegramNotifier.parse_mode must be HTML or MarkdownV2, got {self.parse_mode!r}"
+                "TelegramNotifier.parse_mode must be HTML or MarkdownV2, "
+                f"got {self.parse_mode!r}"
             )
         if self.client is None:
             self.client = httpx.AsyncClient(timeout=self.timeout)
@@ -97,7 +106,10 @@ class TelegramNotifier:
 
     async def send(self, alert: Alert, channel: Channel) -> None:
         del channel  # routing is opaque here; standalone uses constructor chat_id
-        assert self.client is not None  # __post_init__ invariant
+        if self.client is None:
+            raise RuntimeError(
+                "TelegramNotifier.client is None — __post_init__ invariant violated"
+            )
         url = f"{self.api_base}/bot{self.bot_token}/sendMessage"
         body = {
             "chat_id": self.chat_id,
@@ -111,27 +123,33 @@ class TelegramNotifier:
             raise DeliveryFailedError(f"telegram transport failure: {exc}") from exc
 
         status = response.status_code
-        if 200 <= status < 300:
+        if HTTP_2XX_MIN <= status < HTTP_2XX_MAX:
             return
         # Telegram returns JSON with `description`; fall back gracefully.
         try:
             payload = response.json()
-            description = payload.get("description") if isinstance(payload, dict) else None
+            description = (
+                payload.get("description") if isinstance(payload, dict) else None
+            )
         except ValueError:
             description = None
         msg = f"telegram http {status}"
         if description:
             msg = f"{msg}: {description}"
 
-        if status == 401:
+        if status == HTTPStatus.UNAUTHORIZED:
             raise NotificationError(f"{msg} (invalid bot token)")
-        if status == 403:
+        if status == HTTPStatus.FORBIDDEN:
             # Bot was kicked or chat_id wrong — operator must fix; don't loop.
             raise NotificationError(msg)
-        if status == 429 or 500 <= status < 600:
+        if (
+            status == HTTPStatus.TOO_MANY_REQUESTS
+            or HTTP_5XX_MIN <= status < HTTP_5XX_MAX
+        ):
             raise DeliveryFailedError(msg)
-        if 400 <= status < 500:
-            # 400 with a Telegram-specific reason is permanent (bad chat_id, parse error).
+        if HTTP_4XX_MIN <= status < HTTP_5XX_MIN:
+            # 400 with a Telegram-specific reason is permanent
+            # (bad chat_id, parse error).
             raise NotificationError(msg)
         raise DeliveryFailedError(msg)
 

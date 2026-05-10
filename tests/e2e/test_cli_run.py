@@ -28,7 +28,9 @@ from domain_watcher import __version__
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _run_cli(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+def _run_cli(
+    *args: str, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess:
     """Invoke the installed CLI binary in-process via ``uv run``."""
     return subprocess.run(
         ["uv", "run", "domain-watcher", *args],

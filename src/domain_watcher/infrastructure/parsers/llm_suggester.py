@@ -54,14 +54,16 @@ _DATE_FORMAT_ALIASES: Mapping[str, DateFormat] = {
 
 def _coerce_date_format(value: object) -> DateFormat:
     if not isinstance(value, str):
-        raise SuggestionError(f"date_format must be a string, got {type(value).__name__}")
+        raise SuggestionError(
+            f"date_format must be a string, got {type(value).__name__}"
+        )
     normalized = value.strip().lower()
     if normalized in _DATE_FORMAT_ALIASES:
         return _DATE_FORMAT_ALIASES[normalized]
     raise SuggestionError(f"unknown date_format {value!r}")
 
 
-def _extract_content(response: Any) -> str:
+def _extract_content(response: Any) -> str:  # noqa: ANN401 — litellm response is opaque
     """Unpack ``litellm.acompletion`` → assistant text content.
 
     LiteLLM returns an OpenAI-shaped response (object or dict). We probe
@@ -88,7 +90,9 @@ def _extract_content(response: Any) -> str:
     if content is None and isinstance(msg, dict):
         content = msg.get("content")
     if not isinstance(content, str):
-        raise SuggestionError(f"litellm message.content not a string: {type(content).__name__}")
+        raise SuggestionError(
+            f"litellm message.content not a string: {type(content).__name__}"
+        )
     return content
 
 
@@ -98,7 +102,9 @@ def _parse_rule_payload(content: str, *, tld: str) -> ParseRule:
     except json.JSONDecodeError as exc:
         raise SuggestionError(f"litellm returned malformed JSON: {exc}") from exc
     if not isinstance(payload, dict):
-        raise SuggestionError(f"litellm payload is not a JSON object: {type(payload).__name__}")
+        raise SuggestionError(
+            f"litellm payload is not a JSON object: {type(payload).__name__}"
+        )
     expires_regex = payload.get("expires_regex")
     if not isinstance(expires_regex, str) or not expires_regex.strip():
         raise SuggestionError("litellm payload missing or invalid expires_regex")
@@ -109,7 +115,8 @@ def _parse_rule_payload(content: str, *, tld: str) -> ParseRule:
     strptime_format = payload.get("strptime_format")
     if strptime_format is not None and not isinstance(strptime_format, str):
         raise SuggestionError(
-            f"litellm strptime_format must be string or null, got {type(strptime_format).__name__}"
+            "litellm strptime_format must be string or null, "
+            f"got {type(strptime_format).__name__}"
         )
     if date_format is DateFormat.CUSTOM and not strptime_format:
         raise SuggestionError("litellm: date_format=custom but strptime_format missing")
@@ -164,7 +171,9 @@ class LiteLLMRuleSuggester:
         try:
             response = await litellm.acompletion(**kwargs)
         except litellm.exceptions.AuthenticationError as exc:
-            raise SuggestionError(f"litellm auth failure: {exc}", permanent=True) from exc
+            raise SuggestionError(
+                f"litellm auth failure: {exc}", permanent=True
+            ) from exc
         except litellm.exceptions.Timeout as exc:
             raise SuggestionError(f"litellm timeout: {exc}", transient=True) from exc
         except (
@@ -174,7 +183,9 @@ class LiteLLMRuleSuggester:
             litellm.exceptions.BadGatewayError,
             litellm.exceptions.RateLimitError,
         ) as exc:
-            raise SuggestionError(f"litellm transport failure: {exc}", transient=True) from exc
+            raise SuggestionError(
+                f"litellm transport failure: {exc}", transient=True
+            ) from exc
         except litellm.exceptions.APIError as exc:
             raise SuggestionError(f"litellm api error: {exc}", transient=True) from exc
 

@@ -38,13 +38,22 @@ def upgrade() -> None:
 
     op.create_table(
         "learned_rules",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer, "sqlite"),
+            autoincrement=True,
+            nullable=False,
+        ),
         sa.Column("tld", sa.String(length=253), nullable=False),
         sa.Column("expires_regex", sa.Text(), nullable=False),
         sa.Column("date_format", sa.String(length=32), nullable=False),
         sa.Column("strptime_format", sa.Text(), nullable=True),
-        sa.Column("timezone", sa.String(length=64), nullable=False, server_default="UTC"),
-        sa.Column("auto_learned", sa.Boolean(), nullable=False, server_default=sa.true()),
+        sa.Column(
+            "timezone", sa.String(length=64), nullable=False, server_default="UTC"
+        ),
+        sa.Column(
+            "auto_learned", sa.Boolean(), nullable=False, server_default=sa.true()
+        ),
         sa.Column("disabled", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("suggester_id", sa.String(length=128), nullable=False),
         sa.Column("pipeline_version", sa.Integer(), nullable=False),
@@ -52,7 +61,12 @@ def upgrade() -> None:
         sa.Column("sample_domain", sa.String(length=253), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("last_revalidated_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("revalidation_count", sa.Integer(), nullable=False, server_default=sa.text("0")),
+        sa.Column(
+            "revalidation_count",
+            sa.Integer(),
+            nullable=False,
+            server_default=sa.text("0"),
+        ),
         sa.PrimaryKeyConstraint("id", name="pk_learned_rules"),
         sa.UniqueConstraint("tld", "expires_regex", name="uq_learned_rules_tld_regex"),
     )

@@ -85,11 +85,16 @@ class CheckDomainUseCase:
                     await self._wait(attempt)
                     continue
                 # Exhausted retries
-                await self._emit_failed(domain.name, checker.id, reason=last_reason, transient=True)
+                await self._emit_failed(
+                    domain.name, checker.id, reason=last_reason, transient=True
+                )
                 raise
             except PermanentCheckError as exc:
                 await self._emit_failed(
-                    domain.name, checker.id, reason=str(exc) or "permanent_error", transient=False
+                    domain.name,
+                    checker.id,
+                    reason=str(exc) or "permanent_error",
+                    transient=False,
                 )
                 raise
 
@@ -100,7 +105,9 @@ class CheckDomainUseCase:
                     await self._wait(attempt)
                     continue
                 # Exhausted retries — surface the result via DomainCheckFailed.
-                await self._emit_failed(domain.name, checker.id, reason=last_reason, transient=True)
+                await self._emit_failed(
+                    domain.name, checker.id, reason=last_reason, transient=True
+                )
                 return result
             if result.outcome is CheckOutcome.PERMANENT_ERROR:
                 await self._emit_failed(
@@ -119,9 +126,13 @@ class CheckDomainUseCase:
             )
             return result
 
-        # Should be unreachable: the loop returns or re-raises by the last attempt.
-        # Defensive guard — surfaces a clear error if the policy invariants change.
-        assert last_result is not None
+        # Should be unreachable: the loop above either returns or re-raises
+        # before exhausting attempts. Defensive guard — surfaces a clear
+        # error if the policy invariants change.
+        if last_result is None:
+            raise RuntimeError(
+                "check_domain: retry loop exited without producing a result"
+            )
         return last_result
 
     async def _wait(self, attempt: int) -> None:

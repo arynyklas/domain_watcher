@@ -1,8 +1,10 @@
 name: release
 
 # Triggered on a v* tag. Runs the full CI gate, builds wheel + sdist,
-# and publishes to PyPI via Trusted Publishing (no token in the repo).
-# Container image is pushed to GHCR.
+# publishes to PyPI via Trusted Publishing (no token in the repo),
+# pushes a multi-arch container image to GHCR (Trivy-scanned, attested),
+# and finally publishes a GitHub Release with the matching CHANGELOG
+# section as the body.
 
 on:
   push:
@@ -10,6 +12,11 @@ on:
 
 permissions:
   contents: read
+
+# Tag pipelines must complete — never cancel-in-progress.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   ci:
@@ -23,12 +30,14 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6
         with:
           enable-cache: true
+          python-version: "3.12"
 
       - name: pin python
         run: uv python install 3.12
@@ -49,8 +58,18 @@ jobs:
       - name: build
         run: uv build
 
+      - name: twine check
+        run: uvx twine check dist/*
+
+      - name: wheel smoke install
+        run: |
+          uv venv /tmp/smoke --python 3.12
+          uv pip install --python /tmp/smoke/bin/python dist/*.whl
+          /tmp/smoke/bin/domain-watcher --help
+          /tmp/smoke/bin/python -c "import domain_watcher; print(domain_watcher.__version__)"
+
       - name: upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: dist
           path: dist/
@@ -64,16 +83,23 @@ jobs:
       name: pypi
       url: https://pypi.org/p/domain-watcher
     permissions:
-      id-token: write     # required for Trusted Publishing
+      id-token: write       # Trusted Publishing
+      attestations: write   # build provenance
+      contents: read
     steps:
       - name: download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: dist
           path: dist/
 
+      - name: attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+        with:
+          subject-path: "dist/*"
+
       - name: publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         # No `password:` field — Trusted Publishing handles auth.
 
   publish-ghcr:
@@ -83,11 +109,17 @@ jobs:
     permissions:
       packages: write
       contents: read
+      id-token: write       # for image provenance attestation
+      attestations: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      image: ghcr.io/${{ github.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -95,7 +127,7 @@ jobs:
 
       - name: image metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -103,14 +135,108 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: set up buildx
-        uses: docker/setup-buildx-action@v3
+      - name: set up qemu (multi-arch emulation)
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
-      - name: build & push
-        uses: docker/build-push-action@v5
+      - name: set up buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
+
+      # Build (amd64 only, locally loaded) and scan before pushing
+      # anything. A second build below produces the multi-arch images
+      # that actually get pushed; buildx's cache makes the duplication
+      # cheap.
+      - name: build local image for scan
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          push: false
+          tags: domain-watcher:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: trivy scan (fail on CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # master
+        with:
+          image-ref: domain-watcher:scan
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+
+      - name: build & push (multi-arch)
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
         with:
           context: .
           file: docker/Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: attest image build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  github-release:
+    name: github release
+    needs: [build, publish-pypi, publish-ghcr]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: slice CHANGELOG section
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import re
+          import sys
+
+          version = os.environ["VERSION"]
+          src = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+
+          # Match `## [X.Y.Z]` (optionally followed by " — date" or
+          # `## [X.Y.Z] - date`) up to the next `## [` heading or EOF.
+          pattern = re.compile(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(?P<body>.*?)(?=^## \[|\Z)",
+              re.DOTALL | re.MULTILINE,
+          )
+          match = pattern.search(src)
+          if match is None:
+              sys.stderr.write(f"no CHANGELOG section found for version {version}\n")
+              sys.exit(1)
+
+          body = match.group("body").strip("\n")
+          pathlib.Path("release-notes.md").write_text(body + "\n", encoding="utf-8")
+          PY
+          echo "--- release-notes.md ---"
+          cat release-notes.md
+
+      - name: publish github release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          body_path: release-notes.md
+          files: dist/*
+          fail_on_unmatched_files: true

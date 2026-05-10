@@ -13,6 +13,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from domain_watcher.core.checking.events import DomainCheckCompleted, DomainCheckFailed
+from domain_watcher.core.notification.events import NotificationDispatched
+from domain_watcher.core.parsing.events import WhoisRuleInvalidated, WhoisRuleLearned
 from domain_watcher.infrastructure.observability.metrics import (
     alerts_sent_total,
     checks_total,
@@ -22,20 +25,15 @@ from domain_watcher.infrastructure.observability.metrics import (
 
 if TYPE_CHECKING:
     from domain_watcher.application.event_bus import InProcessEventBus
-    from domain_watcher.core.checking.events import (
-        DomainCheckCompleted,
-        DomainCheckFailed,
-    )
-    from domain_watcher.core.notification.events import NotificationDispatched
-    from domain_watcher.core.parsing.events import (
-        WhoisRuleInvalidated,
-        WhoisRuleLearned,
-    )
 
 
 async def _on_check_completed(event: DomainCheckCompleted) -> None:
     result = event.result
-    assert result is not None  # __post_init__ rejects None at construction
+    if result is None:
+        # ``DomainCheckCompleted.__post_init__`` rejects ``None`` at construction,
+        # so this branch is reachable only if that invariant ever changes;
+        # defensively skip the metric instead of crashing the bus.
+        return
     checks_total.labels(checker=result.source, outcome=result.outcome.value).inc()
 
 
@@ -45,8 +43,9 @@ async def _on_check_failed(event: DomainCheckFailed) -> None:
 
 
 async def _on_dispatched(event: NotificationDispatched) -> None:
-    assert event.alert is not None  # invariant from event __post_init__
-    assert event.channel is not None
+    if event.alert is None or event.channel is None:
+        # See ``_on_check_completed`` — invariant from event ``__post_init__``.
+        return
     alerts_sent_total.labels(
         channel=event.channel.value,
         severity=event.alert.severity.value,
@@ -68,18 +67,6 @@ def register(bus: InProcessEventBus) -> None:
     composition root MUST call this exactly once. Tests can build a
     fresh bus per case to avoid coupling.
     """
-
-    # Imports inside the function so the heavy event modules load only
-    # when metrics are actually wired.
-    from domain_watcher.core.checking.events import (
-        DomainCheckCompleted,
-        DomainCheckFailed,
-    )
-    from domain_watcher.core.notification.events import NotificationDispatched
-    from domain_watcher.core.parsing.events import (
-        WhoisRuleInvalidated,
-        WhoisRuleLearned,
-    )
 
     bus.on(DomainCheckCompleted, _on_check_completed)
     bus.on(DomainCheckFailed, _on_check_failed)

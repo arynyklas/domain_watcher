@@ -29,7 +29,9 @@ from pydantic import (
 
 from domain_watcher.core.parsing.value_objects import DateFormat
 from domain_watcher.core.shared.value_objects import Duration
-from domain_watcher.infrastructure.config._duration_field import DurationField  # noqa: TC001
+from domain_watcher.infrastructure.config._duration_field import (
+    DurationField,
+)
 
 # ---------------------------------------------------------------------------
 # Cron validation
@@ -37,13 +39,17 @@ from domain_watcher.infrastructure.config._duration_field import DurationField  
 # Cheap per-field syntax check — APScheduler does the deep validation when the
 # job is added. We just want startup to refuse obviously broken values like
 # ``"abc"`` or 4-token strings before the scheduler ever sees them.
+_CRON_FIELD_COUNT = 5
 _CRON_FIELD_RE = re.compile(r"^[0-9*/,\-?]+$")
 
 
 def _validate_cron(s: str) -> str:
     parts = s.split()
-    if len(parts) != 5:
-        raise ValueError(f"cron must have 5 whitespace-separated fields, got {len(parts)}: {s!r}")
+    if len(parts) != _CRON_FIELD_COUNT:
+        raise ValueError(
+            f"cron must have {_CRON_FIELD_COUNT} whitespace-separated fields, "
+            f"got {len(parts)}: {s!r}"
+        )
     for i, part in enumerate(parts):
         if not _CRON_FIELD_RE.match(part):
             raise ValueError(
@@ -56,7 +62,9 @@ def _validate_cron(s: str) -> str:
 # ---------------------------------------------------------------------------
 # Webhook template validation
 # ---------------------------------------------------------------------------
-_WEBHOOK_PLACEHOLDERS = frozenset({"domain", "expires_at", "threshold", "severity", "cycle_id"})
+_WEBHOOK_PLACEHOLDERS = frozenset(
+    {"domain", "expires_at", "threshold", "severity", "cycle_id"}
+)
 
 
 def _validate_webhook_template(template: str) -> str:
@@ -66,7 +74,7 @@ def _validate_webhook_template(template: str) -> str:
     same parser the runtime renderer uses.
     """
     try:
-        Template(template).substitute({p: "" for p in _WEBHOOK_PLACEHOLDERS})
+        Template(template).substitute(dict.fromkeys(_WEBHOOK_PLACEHOLDERS, ""))
     except KeyError as exc:
         raise ValueError(
             f"webhook body_template references unknown placeholder ${{{exc.args[0]}}}; "
@@ -106,7 +114,9 @@ def _extract_placeholders(template: str) -> set[str]:
 # ---------------------------------------------------------------------------
 NonEmptyStr = Annotated[str, StringConstraints(min_length=1, strip_whitespace=True)]
 PluginId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_\-]+$", min_length=1)]
-TldStr = Annotated[str, StringConstraints(pattern=r"^[a-z0-9]+(\.[a-z0-9]+)*$", min_length=1)]
+TldStr = Annotated[
+    str, StringConstraints(pattern=r"^[a-z0-9]+(\.[a-z0-9]+)*$", min_length=1)
+]
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +145,10 @@ class RuntimeMetricsConfig(_Frozen):
     """``/metrics`` Prometheus listener configuration."""
 
     enabled: bool = False
-    host: NonEmptyStr = "0.0.0.0"
+    # ``0.0.0.0`` is the deliberate Prometheus-listener default so a
+    # container exposes ``/metrics`` on its published port out of the box;
+    # operators tighten this in their config.
+    host: NonEmptyStr = "0.0.0.0"  # noqa: S104
     port: Annotated[int, Field(ge=1, le=65535)] = 9090
 
 
@@ -171,9 +184,13 @@ class NotifierConfig(_Frozen):
         if self.type == "webhook":
             template = self.settings.get("body_template")
             if template is None:
-                raise ValueError(f"notifier {self.id!r}: webhook requires settings.body_template")
+                raise ValueError(
+                    f"notifier {self.id!r}: webhook requires settings.body_template"
+                )
             if not isinstance(template, str):
-                raise ValueError(f"notifier {self.id!r}: settings.body_template must be a string")
+                raise ValueError(
+                    f"notifier {self.id!r}: settings.body_template must be a string"
+                )
             _validate_webhook_template(template)
             url = self.settings.get("url")
             if not isinstance(url, str) or not url:
@@ -199,7 +216,9 @@ class NotificationDefaults(_Frozen):
             raise ValueError("notification_defaults.thresholds cannot be empty")
         for prev, cur in itertools.pairwise(v):
             if cur.seconds >= prev.seconds:
-                raise ValueError("notification_defaults.thresholds must be strictly descending")
+                raise ValueError(
+                    "notification_defaults.thresholds must be strictly descending"
+                )
         return v
 
 
@@ -219,7 +238,8 @@ class WhoisRule(_Frozen):
             raise ValueError(f"invalid regex: {exc}") from exc
         if compiled.groups != 1:
             raise ValueError(
-                f"whois rule expires_regex must have exactly 1 capture group, got {compiled.groups}"
+                "whois rule expires_regex must have exactly 1 capture group, "
+                f"got {compiled.groups}"
             )
         return v
 
@@ -228,7 +248,9 @@ class WhoisRule(_Frozen):
         custom = self.date_format is DateFormat.CUSTOM
         has_fmt = self.strptime_format is not None
         if custom != has_fmt:
-            raise ValueError("whois rule strptime_format is required iff date_format == 'custom'")
+            raise ValueError(
+                "whois rule strptime_format is required iff date_format == 'custom'"
+            )
         return self
 
 
@@ -255,7 +277,8 @@ class LlmFallbackConfig(_Frozen):
     def _suggester_required_when_enabled(self) -> LlmFallbackConfig:
         if self.enabled and self.suggester is None:
             raise ValueError(
-                "parsing.llm_fallback.suggester is required when llm_fallback.enabled is true"
+                "parsing.llm_fallback.suggester is required when "
+                "llm_fallback.enabled is true"
             )
         return self
 
@@ -296,7 +319,9 @@ class DomainEntry(_Frozen):
 
     @field_validator("thresholds")
     @classmethod
-    def _thresholds_descending(cls, v: tuple[Duration, ...] | None) -> tuple[Duration, ...] | None:
+    def _thresholds_descending(
+        cls, v: tuple[Duration, ...] | None
+    ) -> tuple[Duration, ...] | None:
         if v is None:
             return v
         if not v:
@@ -315,7 +340,9 @@ class Config(_Frozen):
     runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
     checkers: tuple[CheckerConfig, ...]
     notifiers: tuple[NotifierConfig, ...]
-    notification_defaults: NotificationDefaults = Field(default_factory=NotificationDefaults)
+    notification_defaults: NotificationDefaults = Field(
+        default_factory=NotificationDefaults
+    )
     parsing: ParsingConfig = Field(default_factory=ParsingConfig)
     domains: tuple[DomainEntry, ...]
 
@@ -340,14 +367,14 @@ class Config(_Frozen):
             domain_names.add(d.name)
             if d.checker not in checker_set:
                 raise ValueError(
-                    f"domain {d.name!r}: checker {d.checker!r} is not declared in checkers[]; "
-                    f"known: {sorted(checker_set)}"
+                    f"domain {d.name!r}: checker {d.checker!r} is not declared "
+                    f"in checkers[]; known: {sorted(checker_set)}"
                 )
             for ch in d.channels:
                 if ch not in notifier_set:
                     raise ValueError(
-                        f"domain {d.name!r}: channel {ch!r} is not declared in notifiers[]; "
-                        f"known: {sorted(notifier_set)}"
+                        f"domain {d.name!r}: channel {ch!r} is not declared "
+                        f"in notifiers[]; known: {sorted(notifier_set)}"
                     )
         return self
 

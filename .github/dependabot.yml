@@ -1,0 +1,49 @@
+# Dependabot configuration.
+#
+# Three ecosystems are watched:
+#   - pip:            project dependencies (pyproject.toml + uv.lock)
+#   - github-actions: every action used in .github/workflows
+#   - docker:         base image in docker/Dockerfile
+#
+# Minor + patch updates are grouped per ecosystem to reduce PR churn;
+# major bumps still arrive as standalone PRs because they need review.
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "python"]
+    groups:
+      python-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "github-actions"]
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "docker"]
+    groups:
+      docker-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

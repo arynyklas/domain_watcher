@@ -18,6 +18,7 @@ EXPECTED_TARGETS = {
     "format-check",
     "typecheck",
     "imports-check",
+    "migrations-check",
     "test",
     "test-unit",
     "test-integration",

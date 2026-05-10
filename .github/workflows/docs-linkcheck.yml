@@ -1,0 +1,63 @@
+name: docs-linkcheck
+
+# Weekly authoritative linkcheck. The per-PR `docs` workflow runs the
+# same check advisory-mode (continue-on-error); this workflow is the
+# enforcement point — it opens an issue on failure so that broken
+# external links surface even if nobody is watching CI logs.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-linkcheck
+  cancel-in-progress: false
+
+jobs:
+  linkcheck:
+    name: sphinx linkcheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: pin python
+        run: uv python install 3.12
+
+      - name: install package + docs extras
+        run: uv sync --extra docs
+
+      - name: linkcheck (enforced)
+        id: linkcheck
+        run: uv run --no-sync sphinx-build -b linkcheck docs docs/_build/linkcheck
+
+      - name: upload linkcheck output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: linkcheck-output
+          path: docs/_build/linkcheck
+          if-no-files-found: warn
+
+      - name: open issue on failure
+        if: failure()
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5  # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: .github/ISSUE_TEMPLATE/linkcheck-failure.md
+          update_existing: true
+          search_existing: open

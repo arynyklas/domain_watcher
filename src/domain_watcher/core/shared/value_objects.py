@@ -24,6 +24,15 @@ Matches ASCII / punycode labels post-IDN normalization. Empty labels are
 rejected separately so we can produce a clearer error message.
 """
 
+# RFC 1035 length limits.
+_DOMAIN_MAX_OCTETS = 253
+_LABEL_MAX_OCTETS = 63
+
+# ``DomainName`` parsing helpers — minimum label counts for ``tld`` /
+# ``registrable`` to do anything meaningful.
+_MIN_LABELS_WITH_TLD = 2
+_MIN_LABELS_WITH_REGISTRABLE_AND_DOUBLE_TLD = 3
+
 _DOUBLE_TLDS: frozenset[str] = frozenset(
     {
         "co.uk",
@@ -70,14 +79,16 @@ class DomainName:
         s = s.lower()
 
         # Total length cap: 253 octets (RFC 1035 §2.3.4).
-        if len(s) > 253:
-            raise ValueError(f"DomainName length {len(s)} exceeds 253 octets")
+        if len(s) > _DOMAIN_MAX_OCTETS:
+            raise ValueError(
+                f"DomainName length {len(s)} exceeds {_DOMAIN_MAX_OCTETS} octets"
+            )
 
         labels = s.split(".")
         for label in labels:
             if not label:
                 raise ValueError(f"DomainName has empty label in {s!r}")
-            if len(label) > 63:
+            if len(label) > _LABEL_MAX_OCTETS:
                 raise ValueError(f"DomainName label too long in {s!r}: {label!r}")
             if not _LABEL_RE.match(label):
                 raise ValueError(f"DomainName has invalid label in {s!r}: {label!r}")
@@ -89,7 +100,7 @@ class DomainName:
     def tld(self) -> str:
         """Effective TLD. Recognizes a small hand-listed set of double TLDs."""
         labels = self.value.split(".")
-        if len(labels) >= 2:
+        if len(labels) >= _MIN_LABELS_WITH_TLD:
             tail = ".".join(labels[-2:])
             if tail in _DOUBLE_TLDS:
                 return tail
@@ -99,11 +110,11 @@ class DomainName:
     def registrable(self) -> DomainName:
         """eTLD+1. Hand-listed double-TLD aware (see module docstring)."""
         labels = self.value.split(".")
-        if len(labels) >= 3:
+        if len(labels) >= _MIN_LABELS_WITH_REGISTRABLE_AND_DOUBLE_TLD:
             tail = ".".join(labels[-2:])
             if tail in _DOUBLE_TLDS:
                 return DomainName(".".join(labels[-3:]))
-        if len(labels) >= 2:
+        if len(labels) >= _MIN_LABELS_WITH_TLD:
             return DomainName(".".join(labels[-2:]))
         return DomainName(self.value)
 
@@ -128,7 +139,9 @@ class Duration:
 
     def __post_init__(self) -> None:
         if not isinstance(self.seconds, int) or isinstance(self.seconds, bool):
-            raise TypeError(f"Duration.seconds must be int, got {type(self.seconds).__name__}")
+            raise TypeError(
+                f"Duration.seconds must be int, got {type(self.seconds).__name__}"
+            )
         if self.seconds < 0:
             raise ValueError(f"Duration cannot be negative: {self.seconds}")
 
@@ -166,7 +179,9 @@ class Duration:
             raise ValueError("Duration.parse: empty string")
         m = _DURATION_RE.match(v)
         if m is None:
-            raise ValueError(f"Duration.parse: invalid syntax {s!r} (expected NN[smhd])")
+            raise ValueError(
+                f"Duration.parse: invalid syntax {s!r} (expected NN[smhd])"
+            )
         n = int(m.group(1))
         unit = m.group(2)
         return cls(seconds=n * _UNIT_SECONDS[unit])

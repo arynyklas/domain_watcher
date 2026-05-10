@@ -69,6 +69,7 @@ if TYPE_CHECKING:
 
     from domain_watcher.core.checking.value_objects import CheckResult
     from domain_watcher.core.monitoring.ports import MonitoredDomainRepository
+    from domain_watcher.core.parsing.ports import LearnedRulesRepository
 
 _log = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class DomainWatcher:
     initial_domains: tuple[MonitoredDomain, ...] = ()
     aclose_hooks: tuple[Callable[[], Awaitable[None]], ...] = ()
     start_hooks: tuple[Callable[[], Awaitable[None]], ...] = ()
-    learned_rules_repo: object | None = None
+    learned_rules_repo: LearnedRulesRepository | None = None
     """Optional reference to the ``LearnedRulesRepository`` used by the
     rules CLI. Composition wires this; the builder leaves it ``None`` if
     no learned-rule store was configured."""
@@ -116,8 +117,12 @@ class DomainWatcher:
         not a supported extension point. Override ``builder()`` and
         instantiate manually if you need a subclass.
         """
-        from domain_watcher.composition import compose_from_config
-        from domain_watcher.infrastructure.config.loader import load_config
+        # Deferred imports — composition pulls every infrastructure adapter
+        # the package ships, which is too heavy for module load.
+        from domain_watcher.composition import compose_from_config  # noqa: PLC0415
+        from domain_watcher.infrastructure.config.loader import (  # noqa: PLC0415
+            load_config,
+        )
 
         cfg = load_config(path)
         return compose_from_config(cfg)
@@ -180,7 +185,7 @@ class DomainWatcher:
     # ------------------------------------------------------------------
     # Watch-set management
     # ------------------------------------------------------------------
-    async def ensure_watching(
+    async def ensure_watching(  # noqa: PLR0913 — keyword-only fields mirror the YAML schema
         self,
         domain: DomainName,
         *,
@@ -202,10 +207,14 @@ class DomainWatcher:
                 f"registered: {sorted(c.id for c in self.checker_registry.all())}"
             )
         cron = schedule if schedule is not None else self.default_schedule
-        chan_ids = tuple(c if isinstance(c, ChannelId) else ChannelId(c) for c in channels)
+        chan_ids = tuple(
+            c if isinstance(c, ChannelId) else ChannelId(c) for c in channels
+        )
         if not chan_ids:
             raise ValueError("ensure_watching: channels cannot be empty")
-        thresholds_t = tuple(thresholds) if thresholds is not None else self.default_thresholds
+        thresholds_t = (
+            tuple(thresholds) if thresholds is not None else self.default_thresholds
+        )
         existing = await self.repo.get(domain)
         new = MonitoredDomain(
             name=domain,
@@ -220,7 +229,9 @@ class DomainWatcher:
             await self.repo.add(new)
         else:
             await self.repo.update(new)
-        await self.scheduler.add_or_update_job(domain, cron, self._make_job_callable(new))
+        await self.scheduler.add_or_update_job(
+            domain, cron, self._make_job_callable(new)
+        )
 
     async def remove_watching(self, domain: DomainName) -> None:
         """Cancel the scheduler job and remove the repo row.
@@ -328,5 +339,5 @@ __all__ = ["DomainWatcher"]
 # bottom of the module — after ``DomainWatcher`` is fully defined — lets
 # ``DomainWatcher.builder()`` create an instance without a runtime cycle.
 from domain_watcher.interfaces.library.builder import (  # noqa: E402
-    DomainWatcherBuilder as DomainWatcherBuilder,
+    DomainWatcherBuilder,
 )

@@ -71,7 +71,9 @@ def test_builder_requires_at_least_one_checker() -> None:
 
 def test_builder_requires_at_least_one_notifier() -> None:
     with pytest.raises(ValueError, match="notifier"):
-        DomainWatcherBuilder().with_checker(FakeChecker(datetime(2030, 1, 1, tzinfo=UTC))).build()
+        DomainWatcherBuilder().with_checker(
+            FakeChecker(datetime(2030, 1, 1, tzinfo=UTC))
+        ).build()
 
 
 def test_builder_registers_passed_in_plugins() -> None:
@@ -184,7 +186,9 @@ async def test_remove_watching_cancels_job_and_keeps_idempotency_rows() -> None:
 
 async def test_check_now_publishes_check_completed_event() -> None:
     clock = FixedClock(datetime(2026, 1, 1, tzinfo=UTC))
-    watcher, _c, _n, _s = _make_watcher(expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock)
+    watcher, _c, _n, _s = _make_watcher(
+        expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock
+    )
     await watcher.start()
     received: list[DomainEvent] = []
 
@@ -202,7 +206,9 @@ async def test_check_now_publishes_check_completed_event() -> None:
 
 async def test_events_iterator_yields_published_events() -> None:
     clock = FixedClock(datetime(2026, 1, 1, tzinfo=UTC))
-    watcher, _c, _n, _s = _make_watcher(expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock)
+    watcher, _c, _n, _s = _make_watcher(
+        expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock
+    )
     await watcher.start()
     name = DomainName("example.com")
     await watcher.ensure_watching(name, checker_id="fake", channels=[ChannelId("ops")])
@@ -218,7 +224,9 @@ async def test_events_iterator_yields_published_events() -> None:
 
 async def test_check_now_unknown_domain_raises() -> None:
     clock = FixedClock(datetime(2026, 1, 1, tzinfo=UTC))
-    watcher, _c, _n, _s = _make_watcher(expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock)
+    watcher, _c, _n, _s = _make_watcher(
+        expires_at=datetime(2026, 6, 1, tzinfo=UTC), clock=clock
+    )
     await watcher.start()
     with pytest.raises(LookupError):
         await watcher.check_now(DomainName("nothing.example"))

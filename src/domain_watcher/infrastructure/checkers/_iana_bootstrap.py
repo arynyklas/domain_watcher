@@ -20,12 +20,17 @@ from domain_watcher.core.shared.errors import (
     PermanentCheckError,
     TransientCheckError,
 )
+from domain_watcher.infrastructure._http import HTTP_4XX_MIN, HTTP_5XX_MIN
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
 DEFAULT_URL = "https://data.iana.org/rdap/dns.json"
 DEFAULT_TTL = timedelta(hours=24)
+
+# IANA bootstrap services entries are ``[[tlds...], [urls...]]`` — at least
+# two list elements are required for a usable record.
+_MIN_SERVICE_ENTRY_LEN = 2
 
 
 class BootstrapResolver(Protocol):
@@ -92,9 +97,9 @@ class IanaBootstrap:
             response = await self._client.get(self._url)
         except (httpx.TimeoutException, httpx.NetworkError) as exc:
             raise TransientCheckError(f"IANA bootstrap fetch failed: {exc}") from exc
-        if response.status_code >= 500:
+        if response.status_code >= HTTP_5XX_MIN:
             raise TransientCheckError(f"IANA bootstrap http {response.status_code}")
-        if response.status_code >= 400:
+        if response.status_code >= HTTP_4XX_MIN:
             raise PermanentCheckError(f"IANA bootstrap http {response.status_code}")
         try:
             data = response.json()
@@ -104,13 +109,15 @@ class IanaBootstrap:
         return self._cache
 
 
-def _parse_registry(data: Mapping[str, object], *, fetched_at: datetime) -> _CachedRegistry:
+def _parse_registry(
+    data: Mapping[str, object], *, fetched_at: datetime
+) -> _CachedRegistry:
     services_raw = data.get("services")
     if not isinstance(services_raw, list):
         raise PermanentCheckError("IANA bootstrap missing 'services' array")
     services: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
     for entry in services_raw:
-        if not isinstance(entry, list) or len(entry) < 2:
+        if not isinstance(entry, list) or len(entry) < _MIN_SERVICE_ENTRY_LEN:
             continue
         tlds_part, urls_part = entry[0], entry[1]
         if not isinstance(tlds_part, list) or not isinstance(urls_part, list):

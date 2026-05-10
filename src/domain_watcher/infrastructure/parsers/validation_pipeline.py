@@ -115,7 +115,8 @@ class ValidationPipeline:
         compiled = rule.expires_regex.compiled
         if compiled.groups != 1:
             raise RuleValidationError(
-                f"gate1: regex must have exactly one capture group, has {compiled.groups}"
+                "gate1: regex must have exactly one capture group, "
+                f"has {compiled.groups}"
             )
 
         # Gate 2: match the same WHOIS the LLM saw.
@@ -183,7 +184,10 @@ class ValidationPipeline:
         cache_key = (domain.tld, kg_domain.value)
         cached = self._cache.get(cache_key)
         now = self.clock.now()
-        if cached is not None and (now - cached[0]).total_seconds() < self.revalidate_after_seconds:
+        if (
+            cached is not None
+            and (now - cached[0]).total_seconds() < self.revalidate_after_seconds
+        ):
             raw_kg = cached[1]
         else:
             try:

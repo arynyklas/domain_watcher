@@ -51,7 +51,7 @@ class ScriptChecker:
     timeout: float = 30.0
     env: dict[str, str] | None = field(default=None)
 
-    async def check(self, domain: DomainName) -> CheckResult:
+    async def check(self, domain: DomainName) -> CheckResult:  # noqa: PLR0911
         argv = (*self.command, domain.value)
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -70,7 +70,9 @@ class ScriptChecker:
             )
 
         try:
-            stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=self.timeout)
+            stdout_b, stderr_b = await asyncio.wait_for(
+                proc.communicate(), timeout=self.timeout
+            )
         except TimeoutError:
             proc.kill()
             with contextlib.suppress(Exception):
@@ -103,7 +105,9 @@ class ScriptChecker:
                 outcome=CheckOutcome.PERMANENT_ERROR,
                 expires_at=None,
                 source=self.id,
-                error=(f"script exit={proc.returncode}; stderr={stderr_tail.strip()!r}"),
+                error=(
+                    f"script exit={proc.returncode}; stderr={stderr_tail.strip()!r}"
+                ),
             )
 
         if payload is None:
@@ -147,7 +151,11 @@ class ScriptChecker:
         error_msg = str(payload.get("error", "script reported failure"))
         return CheckResult(
             domain=domain,
-            outcome=(CheckOutcome.TRANSIENT_ERROR if transient else CheckOutcome.PERMANENT_ERROR),
+            outcome=(
+                CheckOutcome.TRANSIENT_ERROR
+                if transient
+                else CheckOutcome.PERMANENT_ERROR
+            ),
             expires_at=None,
             source=self.id,
             error=error_msg,

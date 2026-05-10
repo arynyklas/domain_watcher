@@ -58,7 +58,7 @@ def run_command(
         raise typer.Exit(code=2) from None
 
     # Compose deferred so the heavy import doesn't penalise --help / version.
-    from domain_watcher.composition import compose_from_config
+    from domain_watcher.composition import compose_from_config  # noqa: PLC0415
 
     watcher = compose_from_config(cfg)
 
@@ -116,7 +116,9 @@ def _domains_from_config(cfg: Config, watcher: object) -> Iterable[MonitoredDoma
     ``last_check`` field is preserved by the repository, not by the
     config holder.
     """
-    from domain_watcher.composition import _build_domain  # local import; private helper
+    # Private helper — kept inside the lambda site to make the cross-module
+    # access intentional, not accidental.
+    from domain_watcher.composition import _build_domain  # noqa: PLC0415
 
     defaults = tuple(cfg.notification_defaults.thresholds)
     return tuple(_build_domain(d, defaults=defaults) for d in cfg.domains)
