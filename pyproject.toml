@@ -46,6 +46,19 @@ integration = [
     "psycopg[binary]>=3.2",
 ]
 
+docs = [
+    "sphinx>=7.3",
+    "myst-parser>=3.0",
+    "furo>=2024.8.6",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.6",
+    "linkify-it-py>=2.0",
+    # Required to import ``domain_watcher.testing`` for autodoc — the
+    # contract harnesses (CheckerContractTest, RepoContractTest, …) are
+    # part of the documented public surface and import pytest at load.
+    "pytest>=8",
+]
+
 [build-system]
 requires = ["uv_build>=0.11.9,<0.12.0"]
 build-backend = "uv_build"

@@ -5,8 +5,8 @@ strategies, multi-channel alerts (Telegram, Email, Discord, generic
 webhook), runtime LLM-assisted WHOIS rule learning under safety rails.
 
 Architecture: hexagonal (ports & adapters) with light DDD bounded
-contexts in `core/`. See [docs/architecture/](docs/architecture/) for
-the full design.
+contexts in `core/`. Documentation is published at
+[domain-watcher.readthedocs.io](https://domain-watcher.readthedocs.io/).
 
 ## Quick start (Docker)
 
@@ -56,6 +56,6 @@ See [docs/guides/integrator/embedding.md](docs/guides/integrator/embedding.md).
 - [docs/guides/operator/](docs/guides/operator/) — running the daemon
 - [docs/guides/integrator/](docs/guides/integrator/) — embedding the library
 - [docs/reference/cli.md](docs/reference/cli.md) — CLI subcommands
-- [docs/architecture/](docs/architecture/) — ADRs and design notes
+- [docs/reference/plugins.md](docs/reference/plugins.md) — plugin protocol
 
 License: MIT.

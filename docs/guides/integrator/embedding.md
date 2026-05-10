@@ -6,9 +6,9 @@ repo and any other async host imports. This guide shows how to wire the
 façade without YAML so an embedding application can keep its own
 configuration story.
 
-> The bot repository itself is **out of scope** here (ADR 0005). What
-> follows is the contract the bot — and any other integrator — depends
-> on.
+> Bot-side code (transport adapters, persistence wiring, channel
+> resolution) is out of scope here. What follows is the library
+> contract the bot — and any other integrator — depends on.
 
 ## Public surface
 
@@ -132,8 +132,9 @@ async and exception-isolated — a raising handler does not block other
 handlers on the same event.
 
 The same events are also reachable as an async iterator
-(`watcher.events()`) for code that prefers a pull model. ADR 0001
-§11(2) explains why both APIs exist.
+(`watcher.events()`) for code that prefers a pull model — push
+callbacks for fan-out, pull iteration for back-pressure-aware
+consumers.
 
 ## State and durability
 
@@ -145,9 +146,9 @@ The library does NOT pick persistence for you:
 - For a short-lived process, `MemoryMonitoredDomainRepo` is fine but
   understand that lost idempotency state means re-pages on restart.
 
-The bot repo, per ADR 0005, owns Postgres in its own way and supplies
-its repos to the builder. The library never opens connections it was
-not handed.
+Embedding hosts that own their own database (e.g. a bot repo with
+Postgres) supply their repos to the builder. The library never opens
+connections it was not handed.
 
 ## Testing your integration
 

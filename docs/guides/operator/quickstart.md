@@ -14,7 +14,7 @@ token. Send a message to your new bot, then visit
 ## 2. Clone and configure
 
 ```bash
-git clone https://github.com/your-org/domain-watcher.git
+git clone https://github.com/arynyklas/domain-watcher.git
 cd domain-watcher
 
 cp docker/example-config.yaml ./domain-watcher.yaml

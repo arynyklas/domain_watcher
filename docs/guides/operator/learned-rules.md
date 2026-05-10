@@ -7,9 +7,9 @@ triple, validate it through a 6-gate safety pipeline, and persist the
 result so the next check on that TLD is deterministic.
 
 This document explains when to enable the fallback and how to inspect,
-promote, and disable rules learned at runtime. The full design lives
-in [ADR 0006](../../architecture/0006-runtime-llm-fallback.md); read
-that once before turning fallback on.
+promote, and disable rules learned at runtime. The threat-model summary
+and gate pipeline below capture the full design — read this page once
+before turning the fallback on.
 
 ## When to enable
 

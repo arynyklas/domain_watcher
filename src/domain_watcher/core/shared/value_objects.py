@@ -151,7 +151,7 @@ class Duration:
     def as_timedelta(self) -> timedelta:
         """Return this duration as a stdlib ``timedelta``.
 
-        Useful when comparing against the difference of two ``datetime``s
+        Useful when comparing against the difference of two ``datetime`` values
         without dragging Duration arithmetic into core comparisons.
         """
         return timedelta(seconds=self.seconds)

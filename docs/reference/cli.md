@@ -22,8 +22,7 @@ Boot the daemon in the foreground. SIGINT and SIGTERM trigger a clean
 shutdown — the scheduler stops, in-flight `send()` calls drain, and
 the process exits 0.
 
-The `--config` flag overrides the search path described in
-[ADR 0003 §2](../architecture/0003-config-schema.md):
+The `--config` flag overrides the default search path:
 
 1. `--config PATH`
 2. `DOMAIN_WATCHER_CONFIG` env var

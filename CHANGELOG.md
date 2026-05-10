@@ -6,6 +6,27 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Documentation moved to a Sphinx + MyST site published at
+  [domain-watcher.readthedocs.io](https://domain-watcher.readthedocs.io/).
+  The internal `docs/architecture/` ADRs and `docs/plans/` working notes
+  were removed from the user-facing tree; the operator and integrator
+  guides now stand alone.
+
+### Added
+
+- `.readthedocs.yaml` — Sphinx build pipeline (Python 3.12, uv-driven
+  install of `.[docs]` extras, `fail_on_warning: true`).
+- `docs/conf.py`, `docs/index.md`, `docs/reference/api.md`,
+  `docs/reference/plugins.md`, `docs/changelog.md` — Sphinx scaffold,
+  autosummary-driven public API reference, and CHANGELOG include.
+- `docs` extra in `pyproject.toml` (sphinx, myst-parser, furo,
+  sphinx-copybutton, sphinx-design, linkify-it-py, pytest — pytest is
+  needed to import `domain_watcher.testing` for autodoc).
+- GitHub Actions `docs` workflow building the Sphinx site on every PR
+  and push, with `-W` warnings-as-errors and an advisory linkcheck pass.
+
 ## [0.1.0] — 2026-05-09
 
 Initial public release. Library + standalone daemon. Bot integration
@@ -95,5 +116,5 @@ Initial public release. Library + standalone daemon. Bot integration
 - The Telegram bot itself (ships from a separate repository — see ADR
   0005). No `aiogram` dependency, no bot code in this tree.
 
-[Unreleased]: https://github.com/your-org/domain-watcher/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/domain-watcher/releases/tag/v0.1.0
+[Unreleased]: https://github.com/arynyklas/domain-watcher/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/arynyklas/domain-watcher/releases/tag/v0.1.0

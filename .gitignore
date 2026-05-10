@@ -11,3 +11,7 @@ dist/
 htmlcov/
 state.db
 state.db-*
+
+# Sphinx build output and autosummary stubs
+docs/_build/
+docs/reference/_generated/

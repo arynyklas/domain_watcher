@@ -8,9 +8,9 @@ never at runtime. The Pydantic schema lives at
 `src/domain_watcher/infrastructure/config/schema.py`; this guide
 explains the shape with operator-level intent.
 
-For environment-variable interpolation rules see
-[ADR 0003 §3](../../architecture/0003-config-schema.md). Defaults are
-listed only when the field has one.
+Environment placeholders use `${VAR}` and `${VAR:-default}`. Required
+variables that resolve to an empty string abort startup with a
+`ConfigError`; defaults are listed only when the field has one.
 
 ## Top level
 
@@ -59,7 +59,7 @@ allows credentials to appear in logs verbatim. Don't.
 
 A list of checker instances. Each entry binds a free-form `id` to a
 plugin `type`. Built-in types: `rdap`, `whois`, `script`. Extra types
-arrive via [plugins](../../architecture/0004-plugin-protocol.md).
+arrive via [plugins](../../reference/plugins.md).
 
 ```yaml
 checkers:
