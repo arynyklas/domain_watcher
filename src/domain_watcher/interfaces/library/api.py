@@ -97,6 +97,7 @@ class DomainWatcher:
     default_schedule: str = "0 */6 * * *"
     initial_domains: tuple[MonitoredDomain, ...] = ()
     aclose_hooks: tuple[Callable[[], Awaitable[None]], ...] = ()
+    start_hooks: tuple[Callable[[], Awaitable[None]], ...] = ()
     learned_rules_repo: object | None = None
     """Optional reference to the ``LearnedRulesRepository`` used by the
     rules CLI. Composition wires this; the builder leaves it ``None`` if
@@ -155,6 +156,11 @@ class DomainWatcher:
                 )
                 await self.repo.update(merged)
         await self.scheduler.start()
+        for hook in self.start_hooks:
+            try:
+                await hook()
+            except Exception:
+                _log.exception("start hook raised")
         self._started = True
 
     async def stop(self) -> None:

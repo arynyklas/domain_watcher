@@ -141,6 +141,22 @@ def compose_from_config(
     clock: TimeProvider = SystemClock()
     bus = InProcessEventBus()
 
+    # Observability: metrics counters subscribe to the bus before any
+    # event flows. structlog is configured idempotently — repeated calls
+    # (hot reload) replace the processor chain.
+    from domain_watcher.application import metrics_subscriber
+    from domain_watcher.infrastructure.observability.structlog_setup import (
+        configure as _configure_logging,
+    )
+
+    if not config.runtime.scrub_secrets:
+        _log.warning("structlog_secret_scrubber_disabled — credentials may appear in logs")
+    _configure_logging(
+        json_format=config.runtime.log_format == "json",
+        scrub=config.runtime.scrub_secrets,
+    )
+    metrics_subscriber.register(bus)
+
     repos = _build_repos(config.runtime.state_db)
 
     # Parsing service (built first so checkers can pin its parse method)
@@ -211,6 +227,17 @@ def compose_from_config(
 
     scheduler = ApsScheduler(timezone=config.runtime.timezone)
 
+    start_hooks: list[Callable[[], Awaitable[None]]] = []
+    if config.runtime.metrics.enabled:
+        from domain_watcher.infrastructure.observability.metrics import MetricsServer
+
+        metrics_server = MetricsServer(
+            host=config.runtime.metrics.host,
+            port=config.runtime.metrics.port,
+        )
+        start_hooks.append(metrics_server.start)
+        aclose_hooks.append(metrics_server.stop)
+
     watcher = DomainWatcher(
         repo=repos.domain_repo,
         idempotency=repos.idempotency,
@@ -226,6 +253,7 @@ def compose_from_config(
         default_schedule="0 */6 * * *",
         initial_domains=initial_domains,
         aclose_hooks=tuple(aclose_hooks),
+        start_hooks=tuple(start_hooks),
         learned_rules_repo=repos.learned_rules,
     )
     # Bind the bootstrap factory so the scheduler reconciles from the
