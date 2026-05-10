@@ -20,8 +20,25 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md LICENSE ./
 COPY src/ ./src/
 
+# ``uv sync`` builds the venv against the Python that lives in *this*
+# image — uv's image installs Python from source under ``/usr/local``.
+# Distroless ships its Debian-packaged Python under ``/usr`` instead.
+# Without rewriting, two things break when the venv is copied into the
+# runtime:
+#   1. ``bin/python3{,.13}`` symlinks point at ``/usr/local/bin``
+#      (missing in distroless) — the entrypoint exec returns ENOENT.
+#   2. ``pyvenv.cfg``'s ``home = /usr/local/bin`` makes the runtime
+#      Python look for the standard library under ``/usr/local/lib``
+#      (missing in distroless) — first ``import`` raises ImportError.
+# Both are paths uv records during sync; we rewrite them post-sync to
+# the distroless-native locations. The builder doesn't need those paths
+# to exist — the rewritten references resolve at runtime.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen --no-dev \
+ && sed -i 's|^home = .*|home = /usr/bin|' /app/.venv/pyvenv.cfg \
+ && ln -sfn /usr/bin/python3.13 /app/.venv/bin/python3.13 \
+ && ln -sfn python3.13           /app/.venv/bin/python3 \
+ && ln -sfn python3.13           /app/.venv/bin/python
 
 
 # ---------------------------------------------------------------------------
@@ -35,10 +52,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # distroless ships at ``/usr/bin/python3.13``. ``python3-debian12`` would
 # ship Python 3.11 — incompatible with the PEP 695 generic class syntax
 # we use (e.g. ``class ConfigHolder[C]:`` in ``application/use_cases``).
-# The builder image above is matched on both glibc (trixie) and Python
-# minor (3.13) so the venv produced there is byte-compatible with this
-# runtime. The package itself still supports Python >=3.12 via pip; only
-# the docker image is pinned to 3.13.
+# The builder image above matches the runtime on glibc (trixie) and on
+# Python minor (3.13); the ``RUN`` step in the builder also re-targets
+# the venv's interpreter symlinks to ``/usr/bin/python3.13`` so the
+# entrypoint script execs cleanly under distroless's Python. The package
+# itself still supports Python >=3.12 via pip; only the docker image is
+# pinned to 3.13 to track its distroless base.
 # ---------------------------------------------------------------------------
 FROM gcr.io/distroless/python3-debian13:nonroot AS runtime
 
