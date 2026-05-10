@@ -64,11 +64,55 @@ requires = ["uv_build>=0.11.9,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-line-length = 100
 target-version = "py312"
+line-length = 88
+indent-width = 4
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "RUF", "SIM", "TC", "TID", "ASYNC"]
+select = [
+    # Pyflakes
+    "F",     # Pyflakes rules for logical errors
+
+    # pycodestyle
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+
+    # isort
+    "I",     # Import sorting and organization
+
+    # pep8-naming
+    "N",     # PEP 8 naming conventions
+
+    # pyupgrade
+    "UP",    # Modern Python syntax upgrades
+
+    # flake8-bugbear
+    "B",     # Common bugs and design problems
+
+    # flake8-simplify
+    "SIM",   # Code simplification suggestions
+
+    # flake8-comprehensions
+    "C4",    # List/dict/set comprehension improvements
+
+    # bandit (security)
+    "S",     # Security vulnerability detection
+
+    # flake8-annotations
+    "ANN",   # Type annotation enforcement
+
+    # flake8-async
+    "ASYNC", # Async/await usage best practices
+
+    # flake8-logging-format
+    "G",     # Logging format and best practices
+
+    # Pylint
+    "PL",    # Pylint rules for code quality
+
+    # Ruff-specific rules
+    "RUF",   # Ruff-specific improvements
+]
 
 [tool.ruff.lint.per-file-ignores]
 # typer's API requires call-site defaults like ``= typer.Option(...)``.

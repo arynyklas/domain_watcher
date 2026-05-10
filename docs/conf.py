@@ -12,7 +12,7 @@ from __future__ import annotations
 import importlib.metadata as _md
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 # -- Path setup --------------------------------------------------------------
@@ -25,16 +25,14 @@ sys.path.insert(0, str(_REPO_ROOT / "src"))
 # -- Project information -----------------------------------------------------
 project = "domain-watcher"
 author = "Aryn Y."
-copyright = f"{datetime.now(tz=timezone.utc):%Y}, {author}"
+copyright = f"{datetime.now(tz=UTC):%Y}, {author}"
 
 try:
     release = _md.version("domain-watcher")
 except _md.PackageNotFoundError:  # not installed: fall back to pyproject
     import tomllib
 
-    release = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text())["project"][
-        "version"
-    ]
+    release = tomllib.loads((_REPO_ROOT / "pyproject.toml").read_text())["project"]["version"]
 version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------

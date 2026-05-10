@@ -17,7 +17,7 @@ install:  ## install runtime + dev deps into the project venv
 sync: install  ## alias for install
 
 lint:  ## ruff lint
-	$(UV) run ruff check
+	$(UV) run ruff check --fix
 
 format:  ## ruff auto-format
 	$(UV) run ruff format
