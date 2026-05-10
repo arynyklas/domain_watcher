@@ -70,7 +70,7 @@ run:  ## run the daemon against ./domain-watcher.yaml
 	$(UV) run domain-watcher run --config ./domain-watcher.yaml
 
 docker-build:  ## build the docker image
-	docker build -t domain-watcher:dev -f docker/Dockerfile .
+	DOCKER_BUILDKIT=1 docker build -t domain-watcher:dev -f docker/Dockerfile .
 
 docker-up:  ## start docker compose stack
 	docker compose -f docker/compose.yml up -d

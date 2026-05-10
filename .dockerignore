@@ -1,0 +1,24 @@
+# Allowlist policy: block everything, then re-include the small set the
+# Dockerfile actually COPYs. Keeps `docker build .` from shipping 250+ MB
+# of .venv / .git / caches to the daemon and prevents accidental bloat
+# when new top-level files appear.
+#
+# If you add a new COPY in docker/Dockerfile, mirror it with a `!` line
+# below.
+
+**
+
+# Project metadata + license consumed by the builder stage.
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+
+# The package source tree.
+!src
+!src/**
+
+# Re-exclude noise that may live inside src/ but never belongs in the image.
+src/**/__pycache__
+src/**/*.py[cod]
+src/**/*.egg-info
