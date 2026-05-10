@@ -7,7 +7,7 @@
 # install the project + runtime deps (no dev extras) into ``/app/.venv``;
 # the runtime stage copies the venv and the source tree, nothing else.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/astral-sh/uv:0.11.12-python3.12-trixie AS builder
+FROM ghcr.io/astral-sh/uv:0.11.12-python3.13-trixie AS builder
 
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
@@ -29,8 +29,18 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 #
 # Distroless: no shell, no apt. Run as nonroot. The ``domain-watcher``
 # entry point is the venv's console script copied across.
+#
+# We pin to ``python3-debian13`` (Debian 13 / trixie, Python 3.13) so the
+# venv's ``bin/python3`` symlink resolves to the system interpreter that
+# distroless ships at ``/usr/bin/python3.13``. ``python3-debian12`` would
+# ship Python 3.11 — incompatible with the PEP 695 generic class syntax
+# we use (e.g. ``class ConfigHolder[C]:`` in ``application/use_cases``).
+# The builder image above is matched on both glibc (trixie) and Python
+# minor (3.13) so the venv produced there is byte-compatible with this
+# runtime. The package itself still supports Python >=3.12 via pip; only
+# the docker image is pinned to 3.13.
 # ---------------------------------------------------------------------------
-FROM gcr.io/distroless/python3-debian12:nonroot AS runtime
+FROM gcr.io/distroless/python3-debian13:nonroot AS runtime
 
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
