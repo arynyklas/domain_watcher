@@ -118,11 +118,35 @@ class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
 
 
+class RuntimePluginsConfig(_Frozen):
+    """Per-group plugin filters consumed by entry-point discovery (ADR 0004 §5.3).
+
+    ``enabled`` is an allowlist; when non-empty it wins over ``disabled``.
+    Both are sets of plugin ``id`` values; a plugin not in ``enabled`` is
+    skipped at composition time. Filters apply uniformly to every group
+    (checkers, notifiers, parsers, rule_suggesters).
+    """
+
+    enabled: tuple[PluginId, ...] = Field(default_factory=tuple)
+    disabled: tuple[PluginId, ...] = Field(default_factory=tuple)
+
+
+class RuntimeMetricsConfig(_Frozen):
+    """``/metrics`` Prometheus listener configuration."""
+
+    enabled: bool = False
+    host: NonEmptyStr = "0.0.0.0"
+    port: Annotated[int, Field(ge=1, le=65535)] = 9090
+
+
 class RuntimeConfig(_Frozen):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["json", "console"] = "json"
     timezone: NonEmptyStr = "UTC"
     state_db: NonEmptyStr = "sqlite:///state.db"
+    plugins: RuntimePluginsConfig = Field(default_factory=RuntimePluginsConfig)
+    metrics: RuntimeMetricsConfig = Field(default_factory=RuntimeMetricsConfig)
+    scrub_secrets: bool = True
 
 
 class CheckerConfig(_Frozen):
@@ -350,6 +374,8 @@ __all__ = [
     "ParsingConfig",
     "RetryConfig",
     "RuntimeConfig",
+    "RuntimeMetricsConfig",
+    "RuntimePluginsConfig",
     "SafetyConfig",
     "SuggesterConfig",
     "WhoisRule",
