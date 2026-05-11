@@ -148,7 +148,7 @@ jobs:
       # that actually get pushed; buildx's cache makes the duplication
       # cheap.
       - name: build local image for scan
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
         with:
           context: .
           file: docker/Dockerfile
@@ -170,7 +170,7 @@ jobs:
 
       - name: build & push (multi-arch)
         id: push
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8  # v6
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
         with:
           context: .
           file: docker/Dockerfile
