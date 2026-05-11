@@ -7,7 +7,7 @@
 # install the project + runtime deps (no dev extras) into ``/app/.venv``;
 # the runtime stage copies the venv and the source tree, nothing else.
 # ---------------------------------------------------------------------------
-FROM ghcr.io/astral-sh/uv:0.11.12-python3.13-trixie AS builder
+FROM ghcr.io/astral-sh/uv:0.11.13-python3.13-trixie AS builder
 
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
