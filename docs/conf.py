@@ -141,6 +141,9 @@ linkcheck_ignore = [
     r"https?://github\.com/arynyklas/domain-watcher/releases/.*",
     r"https?://github\.com/arynyklas/domain-watcher/compare/.*",
     r"https?://pypi\.org/p/domain-watcher.*",
+    # Documentation URL returns 404 until the project is fully set up on Read the Docs.
+    # See: https://github.com/arynyklas/domain-watcher/issues/22
+    r"https?://domain-watcher\.readthedocs\.io/.*",
 ]
 linkcheck_timeout = 10
 linkcheck_workers = 4
